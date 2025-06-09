@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>MVP Task Buddy</title>
+
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    body {
+      font-family: "Fira Sans", sans-serif;
+      transition: all 0.4s ease;
+    }
+
+    /* Base (Light Mode) body styles */
+    body.light {
+      background-image: linear-gradient(
+          to bottom,
+          rgba(253, 230, 138, 0.5),
+          rgba(252, 165, 165, 0.6)
+        ),
+        url("images/LM.png");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      color: #1f2937;
+      /* gray-800 */
+    }
+
+    /* Dark Mode body styles */
+    body.dark {
+      background-image: linear-gradient(
+          to bottom,
+          rgba(31, 41, 55, 0.8),
+          rgba(17, 24, 39, 0.9)
+        ),
+        url("images/LM-dark.png");
+      background-size: cover;
+      background-position: top;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      color: #f9fafb;
+      /* light text */
+    }
+
+    /* --- Custom Styles for Light/Dark Mode Containers and Elements --- */
+
+    /* Main Content Wrapper */
+    .main-content-wrapper {
+      background: linear-gradient(to bottom right, #FDE68A, #FBCFE8);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      border: 1px solid transparent;
+      transition: all 0.4s ease;
+    }
+
+    body.dark .main-content-wrapper {
+      background: linear-gradient(to bottom right, #4B5563, #1F2937);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+      border-color: #374151;
+    }
+
+    /* Left Panel (Today's Most Important Task) */
+    .left-panel {
+      background-color: #FFFFFF;
+      border: 1px solid #FDF7EA;
+      transition: all 0.4s ease;
+    }
+
+    body.dark .left-panel {
+      background-color: #1F2937;
+      border-color: #374151;
+    }
+
+    /* Left Panel Title */
+    .left-panel h2 {
+      color: #B45309;
+      transition: color 0.4s ease;
+    }
+
+    body.dark .left-panel h2 {
+      color: #FCD34D;
+    }
+
+    /* Left Panel Paragraph */
+    .left-panel p {
+      color: #92400E;
+      transition: color 0.4s ease;
+    }
+
+    body.dark .left-panel p {
+      color: #D1D5DB;
+    }
+
+    /* Inputs (General style for all inputs in the app) */
+    input[type="text"] {
+      background-color: #FFFFFF;
+      border: 1px solid #D1D5DB;
+      color: #1F2937;
+      /* gray-800 */
+      transition: all 0.4s ease;
+    }
+
+    input[type="text"]::placeholder {
+      color: #6B7280;
+      /* gray-500 */
+    }
+
+    body.dark input[type="text"] {
+      background-color: #374151;
+      border-color: #4B5563;
+      color: #F9FAFB;
+      /* white */
+    }
+
+    body.dark input[type="text"]::placeholder {
+      color: #9CA3AF;
+      /* gray-400 */
+    }
+
+    /* Add Step and Mark Done Buttons */
+    .btn-yellow {
+      background-color: #FDE047;
+      color: #92400E;
+      transition: all 0.4s ease;
+    }
+
+    .btn-yellow:hover {
+      background-color: #FACC15;
+    }
+
+    body.dark .btn-yellow {
+      background-color: #D97706;
+      color: #FFFFFF;
+    }
+
+    body.dark .btn-yellow:hover {
+      background-color: #B45309;
+    }
+
+    .btn-pink {
+      background-color: #FBCFE8;
+      color: #9D174D;
+      transition: all 0.4s ease;
+    }
+
+    .btn-pink:hover {
+      background-color: #F472B6;
+    }
+
+    body.dark .btn-pink {
+      background-color: #DB2777;
+      color: #FFFFFF;
+    }
+
+    body.dark .btn-pink:hover {
+      background-color: #BE185D;
+    }
+
+
+    /* Step List Items */
+    #stepList li {
+      color: #92400E;
+      transition: color 0.4s ease;
+    }
+
+    body.dark #stepList li {
+      color: #D1D5DB;
+    }
+
+    /* Right Panel (MVP: Let's finish those tasks together!) */
+    .right-panel {
+      background-color: #FFFFFF;
+      border: 1px solid #FDBA74;
+      transition: all 0.4s ease;
+    }
+
+    body.dark .right-panel {
+      background-color: #1F2937;
+      border-color: #374151;
+    }
+
+    /* Right Panel Title */
+    .right-panel h1 {
+      color: #1F2937;
+      transition: color 0.4s ease;
+    }
+
+    body.dark .right-panel h1 {
+      color: #F9FAFB;
+    }
+
+    /* No task selected message */
+    #taskPage p.italic {
+      color: #4B5563;
+      transition: color 0.4s ease;
+    }
+
+    body.dark #taskPage p.italic {
+      color: #9CA3AF;
+    }
+
+    /* Dynamically added task item */
+    .task-item {
+      background-color: #FBCFE8;
+      color: #1F2937;
+      /* Default text color for task item */
+      transition: all 0.4s ease;
+    }
+
+    body.dark .task-item {
+      background-color: #374151;
+      color: #F9FAFB;
+      /* Dark mode text color for task item */
+    }
+
+    /* Done button on task item */
+    .task-item .btn-red {
+      background-color: #FCA5A5;
+      color: #991B1B;
+      transition: all 0.4s ease;
+    }
+
+    .task-item .btn-red:hover {
+      background-color: #F87171;
+    }
+
+    body.dark .task-item .btn-red {
+      background-color: #DC2626;
+      color: #FFFFFF;
+    }
+
+    body.dark .task-item .btn-red:hover {
+      background-color: #B91C1C;
+    }
+  </style>
+
+
+</head>
+
+<body class="relative text-gray-800 min-h-screen font-sans overflow-x-hidden">
+
+
+  <button id="toggleDark"
+    class="fixed top-4 right-4 z-50 bg-white/80 text-gray-800 border border-gray-300 px-4 py-2 rounded-full shadow hover:bg-gray-200 transition dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600">
+    🌙 Dark Mode
+  </button>
+
+
+
+  <div class="max-w-6xl mx-auto mt-10 px-4 py-8 rounded-3xl main-content-wrapper">
+
+    <div class="flex flex-col lg:flex-row gap-6">
+
+      <div class="flex-1 relative z-10 p-6 rounded-2xl shadow-lg left-panel">
+
+        <div class="relative z-10 space-y-4">
+
+          <h2 class="text-xl font-semibold">
+            📝 Today's Most Important Task
+          </h2>
+
+          <p>
+            Choose your most important task for today and break
+            it down into some cutie small steps! :3
+          </p>
+
+          <input id="taskInput" type="text"
+            class="w-full px-4 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+            placeholder="Task" />
+
+
+          <div class="flex gap-2">
+
+            <button onclick="showStepForm()" class="px-4 py-2 rounded font-medium shadow btn-yellow">
+              Add Step
+            </button>
+
+            <button class="px-4 py-2 rounded font-medium shadow btn-pink">
+              Mark Done
+            </button>
+
+          </div>
+
+
+          <ul id="stepList" class="list-disc list-inside space-y-1"></ul>
+
+
+          <div id="stepForm" class="hidden flex gap-2">
+
+            <input id="stepInput" type="text"
+              class="flex-1 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              placeholder="Add a small step..." />
+
+            <button type="button" onclick="submitStep()" class="px-3 py-2 rounded transition btn-yellow">
+              ➕ Add
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="flex-1 shadow-lg rounded-xl p-6 right-panel">
+
+        <h1 class="text-2xl font-bold mb-4">
+          🌟 MVP: Let's finish those tasks together!
+        </h1>
+
+
+        <div class="flex gap-2 mb-6">
+
+          <input id="taskInput2" type="text"
+            class="flex-1 px-4 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+            placeholder="Gimme them tasks!" />
+
+          <button onclick="addTask()" class="px-4 py-2 rounded-xl transition bg-pink-500 text-white hover:bg-pink-600 dark:bg-pink-600 dark:hover:bg-pink-700">
+            Add
+          </button>
+
+        </div>
+
+
+        <div id="taskPage" class="space-y-4">
+
+         <div id="taskList" class="space-y-4">
+  <p class="italic">No task selected yet.</p>
+</div>
+
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+
+  <script src="script.js"></script>
+</body>
+
+</html>
