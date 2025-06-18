@@ -1,8 +1,26 @@
-const taskInput = document.getElementById("taskInput");
-const taskPage = document.getElementById("taskPage");
+// --- DOM Element References ---
+const taskInput = document.getElementById("taskInput"); // For main task
+const taskPage = document.getElementById("taskPage"); // Container for all tasks list
+const mainTaskInput = document.getElementById("taskInput"); // Same as taskInput, kept for clarity in context
+const stepList = document.getElementById("stepList");
+const stepForm = document.getElementById("stepForm");
+const stepInput = document.getElementById("stepInput");
+const addStepBtn = document.querySelector(".btn-yellow"); // "Add Step" button for main task
+const markDoneBtn = document.querySelector(".btn-pink"); // "Mark Done" button for main task
+
+const body = document.body;
+const toggleBtn = document.getElementById("toggleDark");
+
+const bookContainer = document.querySelector(".book-container");
+const showMainTaskBtn = document.getElementById("showMainTaskBtn");
+const showAllTasksBtn = document.getElementById("showAllTasksBtn");
+
+
+// --- Task Data and Persistence ---
 let tasks = [];
 let mainTask = null; // Variable to hold the reference to today's most important task
 
+// Load tasks from localStorage on script initialization
 const storedTasks = localStorage.getItem("tasks");
 if (storedTasks) {
   tasks = JSON.parse(storedTasks).map((task) => ({
@@ -10,14 +28,15 @@ if (storedTasks) {
     done: task.done || false,
     isMainTask: task.isMainTask || false, // Ensure isMainTask property exists
   }));
-  // Find the main task if it exists
-  mainTask = tasks.find((task) => task.isMainTask);
+  // Find the main task if it exists (and is not done)
+  mainTask = tasks.find((task) => task.isMainTask && !task.done);
 }
 
 function saveTasks() {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
+// --- Tips Array ---
 const tips = [
   "Break down large tasks into smaller, manageable steps.",
   "If you can't do it today, it's okay, don't whiplash yourself!",
@@ -32,13 +51,28 @@ const tips = [
   "Don't listen to music that makes you restless, or makes you think only about it.",
   "Try doing just a tiny peace of the task, it can help you get started. and then you will be more okay with continuing.",
   "Visualize the end result to stay motivated.",
-  "Plan how you'll do the task, try to gaslight yourself into falling in love with the process!"
+  "Plan how you'll do the task, try to gaslight yourself into falling in love with the process!",
+  "You may feel sad if you failed to do the task for a few days, try and plan it, sleep it off, it will be okay, I promise!"
 ];
 
+// --- Utility Functions ---
 function findTaskById(taskId) {
   return tasks.find((t) => t.id === taskId);
 }
 
+function displayRandomTip(tipContainerId) {
+  const tipContainer = document.getElementById(tipContainerId);
+  if (!tipContainer) return;
+
+  const randomTip = tips[Math.floor(Math.random() * tips.length)];
+  tipContainer.innerHTML = `<strong class="font-bold">💡 Tip:</strong> ${randomTip} <span id="newTipBtn" class="ml-2 text-blue-600 dark:text-blue-400 cursor-pointer hover:underline">Get another tip!</span>`;
+
+  // Re-assign event listener for the new tip button each time content is updated
+  document.getElementById("newTipBtn").onclick = () =>
+    displayRandomTip(tipContainerId);
+}
+
+// --- Right Panel (All Tasks) Functions ---
 function addTask() {
   const taskInput2 = document.getElementById("taskInput2");
   const title = taskInput2.value.trim();
@@ -52,19 +86,19 @@ function addTask() {
     isMainTask: false, // Default to false for tasks added via the right panel
   };
 
-  tasks.unshift(task);
-  saveTasks(); // <--- Save after adding
+  tasks.unshift(task); // Add to the beginning of the array
+  saveTasks();
   taskInput2.value = "";
 
   renderTasksOnRightPanel();
 }
 
 function renderTasksOnRightPanel() {
-  taskPage.innerHTML = "";
+  taskPage.innerHTML = ""; // Clear existing content
 
-  // Filter out the main task if it exists and is not done, otherwise include it in the right panel
+  // Filter out the active main task from the right panel display
   const tasksToRender = tasks.filter(
-    (task) => !task.isMainTask || (task.isMainTask && task.done)
+    (task) => !task.isMainTask || (task.isMainTask && task.done) // Include main task if it's done
   );
 
   if (tasksToRender.length === 0) {
@@ -76,7 +110,9 @@ function renderTasksOnRightPanel() {
   }
 
   tasksToRender.forEach((task) => {
-    if (task.done) return;
+    // Only render tasks that are not done (unless they were main tasks that are now done)
+    if (task.done && !task.isMainTask) return; // Don't show regular done tasks
+
     const newTaskDiv = document.createElement("div");
     newTaskDiv.classList.add(
       "task-item",
@@ -101,51 +137,29 @@ function renderTasksOnRightPanel() {
       "hover:bg-red-400",
       "btn-red"
     );
-    removeBtn.textContent = "Done";
+     removeBtn.textContent = "Done";
     removeBtn.onclick = () => {
-      task.done = true;
-      saveTasks(); // <--- Save after marking as done
-      renderTasksOnRightPanel();
-      renderMainTask(); // Re-render main task panel in case it was the main task
+      // Find the index of the task to remove
+      const taskIndex = tasks.findIndex((t) => t.id === task.id);
+      if (taskIndex > -1) {
+        tasks.splice(taskIndex, 1); // Remove task from the array
+        saveTasks(); // Save the updated tasks array
+        renderTasksOnRightPanel(); // Re-render the right panel
+        renderMainTask(); // Re-render main task panel in case it was the main task
+      }
     };
 
     newTaskDiv.appendChild(titleSpan);
     newTaskDiv.appendChild(removeBtn);
-
     taskPage.appendChild(newTaskDiv);
   });
-}
-
-function removeTask(taskId) {
-  const taskIndex = tasks.findIndex((t) => t.id === taskId);
-  if (taskIndex > -1) {
-    tasks.splice(taskIndex, 1);
-    saveTasks(); // <--- Save after removing
-    renderTasksOnRightPanel();
-    renderMainTask(); // Re-render main task panel in case it was the main task
-  }
-}
-
-function displayRandomTip(tipContainerId) {
-  const tipContainer = document.getElementById(tipContainerId);
-  if (!tipContainer) return;
-
-  const randomTip = tips[Math.floor(Math.random() * tips.length)];
-  tipContainer.innerHTML = `<strong class="font-bold">💡 Tip:</strong> ${randomTip} <span id="newTipBtn" class="ml-2 text-blue-600 dark:text-blue-400 cursor-pointer hover:underline">Get another tip!</span>`;
-
-  document.getElementById("newTipBtn").onclick = () =>
-    displayRandomTip(tipContainerId);
 }
 
 function openTaskPage(taskId) {
   const task = findTaskById(taskId);
   if (!task) return;
 
-  taskPage.innerHTML = "";
-
-  const title = document.createElement("h2");
-  title.classList.add("text-xl", "font-semibold", "mb-2");
-  title.textContent = task.title;
+  taskPage.innerHTML = ""; // Clear right panel to show task details
 
   const backButton = document.createElement("button");
   backButton.classList.add(
@@ -156,6 +170,10 @@ function openTaskPage(taskId) {
   );
   backButton.textContent = "← Back to All Tasks";
   backButton.onclick = renderTasksOnRightPanel;
+
+  const title = document.createElement("h2");
+  title.classList.add("text-xl", "font-semibold", "mb-2");
+  title.textContent = task.title;
 
   const tipDiv = document.createElement("div");
   tipDiv.id = "currentTaskTip";
@@ -178,7 +196,7 @@ function openTaskPage(taskId) {
     const text = input.value.trim();
     if (!text) return;
     task.subtasks.push(text);
-    saveTasks(); // <--- Save after adding subtask
+    saveTasks();
     input.value = "";
     renderSubtaskList(task);
   };
@@ -219,7 +237,7 @@ function openTaskPage(taskId) {
 
 function renderSubtaskList(task) {
   const list = document.getElementById("subtaskList");
-  if (!list) return; // Ensure the list element exists
+  if (!list) return;
   list.innerHTML = "";
   task.subtasks.forEach((sub) => {
     const li = document.createElement("li");
@@ -228,14 +246,7 @@ function renderSubtaskList(task) {
   });
 }
 
-// --- Functions for Today's Most Important Task (Left Panel) ---
-const mainTaskInput = document.getElementById("taskInput");
-const stepList = document.getElementById("stepList");
-const stepForm = document.getElementById("stepForm");
-const stepInput = document.getElementById("stepInput");
-const addStepBtn = document.querySelector(".btn-yellow");
-const markDoneBtn = document.querySelector(".btn-pink");
-
+// --- Left Panel (Main Task) Functions ---
 function renderMainTask() {
   if (mainTask && !mainTask.done) {
     taskInput.value = mainTask.title;
@@ -248,7 +259,6 @@ function renderMainTask() {
     taskInput.disabled = false; // Enable input when no task or task is done
     stepList.innerHTML = "";
     stepForm.classList.add("hidden");
-    // Optionally hide "Add Step" and "Mark Done" buttons if no main task
     addStepBtn.style.display = "none";
     markDoneBtn.style.display = "none";
   }
@@ -258,16 +268,17 @@ function addMainTask() {
   const title = mainTaskInput.value.trim();
   if (!title) return;
 
-  // If a main task already exists and is not done, don't create a new one
   if (mainTask && !mainTask.done) {
     alert("Please mark the current main task as done before adding a new one.");
     return;
   }
 
-  // If there's an old main task that's done, update its `isMainTask` to false
-  // and then create a new one. This ensures only one active main task.
+  // If there's an old main task that's done, set its `isMainTask` to false
   if (mainTask && mainTask.done) {
     mainTask.isMainTask = false;
+    // We should also remove it from the tasks array if it's not needed anymore,
+    // or keep it for history but ensure it's not marked as mainTask.
+    // For now, simply setting isMainTask to false is sufficient.
   }
 
   mainTask = {
@@ -279,8 +290,8 @@ function addMainTask() {
   };
   tasks.unshift(mainTask); // Add to the beginning of the tasks array
   saveTasks();
-  renderMainTask(); // Render the left panel with the new main task
-  renderTasksOnRightPanel(); // Update right panel (it should not show the active main task)
+  renderMainTask(); // Update left panel
+  renderTasksOnRightPanel(); // Update right panel (should hide active main task)
 }
 
 function renderMainTaskSteps() {
@@ -304,7 +315,7 @@ function showStepForm() {
 }
 
 function submitStep() {
-  if (!mainTask) return; // Should not happen if showStepForm is called correctly
+  if (!mainTask) return;
 
   const value = stepInput.value.trim();
   if (!value) return;
@@ -329,41 +340,82 @@ function markMainTaskDone() {
   renderTasksOnRightPanel(); // Update the right panel
 }
 
-// Event Listeners for the Left Panel
+// --- Theme Toggling Logic ---
+function applyTheme(theme) {
+  if (theme === "dark") {
+    body.classList.add("dark");
+    body.classList.remove("light");
+    toggleBtn.innerHTML = '☀️ Light Mode'; // Using innerHTML for emoji
+  } else {
+    body.classList.add("light");
+    body.classList.remove("dark");
+    toggleBtn.innerHTML = '🌙 Dark Mode'; // Using innerHTML for emoji
+  }
+}
+
+// --- Page Turning Logic ---
+function showPage(pageName) {
+  if (pageName === 'mainTask') {
+    bookContainer.classList.remove('show-right');
+    bookContainer.classList.add('show-left');
+    // Set active styles for "Today's Task" button
+    showMainTaskBtn.classList.add('bg-blue-400', 'text-white', 'hover:bg-blue-500');
+    showMainTaskBtn.classList.remove('bg-gray-200', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-50', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
+    // Remove active styles from "All Tasks" button
+    showAllTasksBtn.classList.remove('bg-blue-400', 'text-white', 'hover:bg-blue-500');
+    showAllTasksBtn.classList.add('bg-gray-200', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-50', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
+  } else if (pageName === 'allTasks') {
+    bookContainer.classList.remove('show-left');
+    bookContainer.classList.add('show-right');
+    // Set active styles for "All Tasks" button
+    showAllTasksBtn.classList.add('bg-blue-400', 'text-white', 'hover:bg-blue-500');
+    showAllTasksBtn.classList.remove('bg-gray-200', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-50', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
+    // Remove active styles from "Today's Task" button
+    showMainTaskBtn.classList.remove('bg-blue-400', 'text-white', 'hover:bg-blue-500');
+    showMainTaskBtn.classList.add('bg-gray-200', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-50', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
+  }
+}
+
+
+// --- Event Listeners (initially, then dynamically assigned) ---
+// Left Panel (Main Task) event listener for input
 taskInput.addEventListener("keypress", (e) => {
   if (e.key === "Enter") {
     addMainTask();
   }
 });
 
-// Re-assign onclick for the Add Step button - it's outside the stepForm 
+// "Add Step" button for main task
 addStepBtn.onclick = showStepForm;
 
-// Assign onclick for Mark Done button
+// "Mark Done" button for main task
 markDoneBtn.onclick = markMainTaskDone;
 
-// Assign onsubmit for the step form inside showStepForm (already done, but reiterating)
+// Step form submission for main task
 stepForm.onsubmit = (e) => {
   e.preventDefault();
   submitStep();
 };
 
-const body = document.body;
-const toggleBtn = document.getElementById("toggleDark");
-
-function applyTheme(theme) {
-  if (theme === "dark") {
-    body.classList.add("dark");
-    body.classList.remove("light");
-    toggleBtn.textContent = "☀️ Light Mode";
+// Theme toggle button
+toggleBtn.addEventListener("click", () => {
+  if (body.classList.contains("dark")) {
+    applyTheme("light");
+    localStorage.setItem("theme", "light");
   } else {
-    body.classList.add("light");
-    body.classList.remove("dark");
-    toggleBtn.textContent = "🌙 Dark Mode";
+    applyTheme("dark");
+    localStorage.setItem("theme", "dark");
   }
-}
+});
 
+// Page turning navigation buttons
+showMainTaskBtn.addEventListener('click', () => showPage('mainTask'));
+showAllTasksBtn.addEventListener('click', () => showPage('allTasks'));
+
+
+// --- Initial Setup on DOM Load ---
 document.addEventListener("DOMContentLoaded", () => {
+  // Apply saved theme or system preference
   const savedTheme = localStorage.getItem("theme");
   if (savedTheme) {
     applyTheme(savedTheme);
@@ -376,16 +428,8 @@ document.addEventListener("DOMContentLoaded", () => {
     applyTheme("light");
   }
 
-  renderMainTask(); // Render the main task on page load
-  renderTasksOnRightPanel(); // Render other tasks on page load
-});
-
-toggleBtn.addEventListener("click", () => {
-  if (body.classList.contains("dark")) {
-    applyTheme("light");
-    localStorage.setItem("theme", "light");
-  } else {
-    applyTheme("dark");
-    localStorage.setItem("theme", "dark");
-  }
+  // Render initial tasks and set initial page view
+  renderMainTask();
+  renderTasksOnRightPanel();
+  showPage('mainTask'); // Default to showing the "Today's Task" page on load
 });
