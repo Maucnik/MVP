@@ -2,23 +2,25 @@
 <html lang="en">
 
 <head>
-
   <meta charset="UTF-8" />
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <title>MVP Task Buddy</title>
 
-
   <script src="https://cdn.tailwindcss.com"></script>
-
 
   <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
 
   <style>
+    /* Global body styles */
     body {
       font-family: "Fira Sans", sans-serif;
       transition: all 0.4s ease;
+      overflow-x: hidden;
+      /* Prevent horizontal scroll during flip */
+      min-height: 100vh;
+      /* Ensure body takes full height */
+      font-size: 16px; /* Base font size */
+      line-height: 1.5; /* Base line height */
     }
 
     /* Base (Light Mode) body styles */
@@ -55,7 +57,7 @@
 
     /* --- Custom Styles for Light/Dark Mode Containers and Elements --- */
 
-    /* Main Content Wrapper */
+    /* Main Content Wrapper (the overall app container) */
     .main-content-wrapper {
       background: linear-gradient(to bottom right, #FDE68A, #FBCFE8);
       box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
@@ -242,110 +244,192 @@
     body.dark .task-item .btn-red:hover {
       background-color: #B91C1C;
     }
+
+    /* --- Page Turn Effect Styles --- */
+    /* Container for the two "pages" */
+    .book-container {
+      position: relative;
+      width: 100%;
+      /* Occupy full width of its flex parent */
+      height: auto;
+      /* Height determined by content */
+      perspective: 1500px;
+      /* Depth for 3D effect */
+      transform-style: preserve-3d;
+      /* Children render in 3D space */
+      display: flex;
+      /* Arrange children side-by-side initially */
+      justify-content: center;
+      /* Center the book visually */
+      align-items: flex-start;
+      /* Align content at top within the flex container */
+      gap: 2rem;
+      /* Spacing between the "pages" when open */
+    }
+
+    /* Individual "page" panels */
+    .book-page {
+      position: relative;
+      flex: 1;
+      /* Each page takes equal width */
+      transform-origin: left center;
+      /* Rotate from the left edge for the left page */
+      transition: transform 0.8s ease-in-out, opacity 0.4s;
+      /* Smooth rotation and fade */
+      backface-visibility: hidden;
+      /* Hide the back of the page during rotation */
+      min-width: 0;
+      /* Allow flex items to shrink */
+    }
+
+    /* State when the "Today's Task" page (left) is active/visible */
+    .book-container.show-left .left-panel {
+      transform: rotateY(0deg);
+      /* Left page is flat, facing forward */
+      opacity: 1;
+      pointer-events: auto;
+      /* Allow interaction */
+    }
+
+    .book-container.show-left .right-panel {
+      transform: rotateY(180deg);
+      /* Right page is rotated 180deg to hide its front */
+      opacity: 0;
+      pointer-events: none;
+      /* Disable interaction with hidden right page */
+    }
+
+    /* State when the "All Tasks" page (right) is active/visible */
+    .book-container.show-right .left-panel {
+      transform: rotateY(-180deg);
+      /* Left page rotates -180deg to hide its front */
+      opacity: 0;
+      pointer-events: none;
+      /* Disable interaction with hidden left page */
+    }
+
+    .book-container.show-right .right-panel {
+      transform: rotateY(0deg);
+      /* Right page is flat, facing forward */
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Media query for smaller screens (e.g., mobile) */
+    @media (max-width: 1023px) {
+      .book-container {
+        flex-direction: column;
+        /* Stack panels vertically */
+        perspective: none;
+        /* Disable 3D perspective */
+        transform-style: flat;
+        /* Disable 3D transforms */
+        gap: 1rem;
+        /* Reduce gap */
+      }
+
+      .book-page {
+        transform-origin: center center;
+        /* No specific 3D origin needed */
+        transition: none;
+        /* No 3D transition */
+        backface-visibility: visible;
+        /* No need to hide backface */
+      }
+
+      /* Hide/show panels directly on small screens without 3D flip */
+      .book-container.show-right .left-panel,
+      .book-container.show-left .right-panel {
+        display: none;
+        opacity: 0;
+        transform: none;
+        /* Ensure no lingering transforms */
+      }
+
+      .book-container.show-left .left-panel,
+      .book-container.show-right .right-panel {
+        display: block;
+        /* Show the active panel */
+        opacity: 1;
+        transform: none;
+      }
+    }
   </style>
-
-
 </head>
 
-<body class="relative text-gray-800 min-h-screen font-sans overflow-x-hidden">
-
-
+<body class="relative text-gray-800 font-sans">
   <button id="toggleDark"
     class="fixed top-4 right-4 z-50 bg-white/80 text-gray-800 border border-gray-300 px-4 py-2 rounded-full shadow hover:bg-gray-200 transition dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600">
     🌙 Dark Mode
   </button>
 
-
-
   <div class="max-w-6xl mx-auto mt-10 px-4 py-8 rounded-3xl main-content-wrapper">
 
-    <div class="flex flex-col lg:flex-row gap-2">
+    <div class="flex justify-center mb-6">
+      <button id="showMainTaskBtn"
+        class="px-6 py-2 rounded-l-full font-bold transition-colors shadow">
+        Today's Task
+      </button>
+      <button id="showAllTasksBtn"
+        class="px-6 py-2 rounded-r-full font-bold transition-colors shadow">
+        All Tasks
+      </button>
+    </div>
 
-      <div class="flex-1 relative z-10 p-6 rounded-2xl shadow-lg left-panel">
-
+    <div class="book-container show-left flex-col lg:flex-row">
+      <div class="book-page left-panel relative z-10 p-6 rounded-2xl shadow-lg">
         <div class="relative z-10 space-y-4">
-
           <h2 class="text-xl font-semibold">
             📝 Today's Most Important Task
           </h2>
-
           <p>
             Choose your most important task for today and break
             it down into some cutie small steps! :3
           </p>
-
           <input id="taskInput" type="text"
             class="w-full px-4 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
             placeholder="Task" />
-
-
           <div class="flex gap-2">
-
             <button onclick="showStepForm()" class="px-4 py-2 rounded font-medium shadow btn-yellow">
               Add Step
             </button>
-
             <button class="px-4 py-2 rounded font-medium shadow btn-pink">
               Mark Done
             </button>
-
           </div>
-
-
           <ul id="stepList" class="list-disc list-inside space-y-1"></ul>
-
-
           <div id="stepForm" class="hidden flex gap-2">
-
             <input id="stepInput" type="text"
               class="flex-1 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
               placeholder="Add a small step..." />
-
             <button type="button" onclick="submitStep()" class="px-3 py-2 rounded transition btn-yellow">
               ➕ Add
             </button>
-
           </div>
-
         </div>
-
       </div>
 
-
-      <div class="flex-1 shadow-lg rounded-xl p-6 right-panel">
-
+      <div class="book-page right-panel shadow-lg rounded-xl p-6">
         <h1 class="text-2xl font-bold mb-4">
           🌟 MVP: Let's finish those tasks together!
         </h1>
-
-
         <div class="flex gap-2 mb-6">
-
           <input id="taskInput2" type="text"
             class="flex-1 px-4 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
             placeholder="Gimme them tasks!" />
-
-          <button onclick="addTask()" class="px-4 py-2 rounded-xl transition bg-pink-500 text-white hover:bg-pink-600 dark:bg-pink-600 dark:hover:bg-pink-700">
+          <button onclick="addTask()"
+            class="px-4 py-2 rounded-xl transition bg-pink-500 text-white hover:bg-pink-600 dark:bg-pink-600 dark:hover:bg-pink-700">
             Add
           </button>
-
         </div>
-
-
         <div id="taskPage" class="space-y-4">
-
-         <div id="taskList" class="space-y-4">
-  <p class="italic">No task selected yet.</p>
-</div>
-
-
+          <div id="taskList" class="space-y-4">
+            <p class="italic">No task selected yet.</p>
+          </div>
         </div>
-
       </div>
-
     </div>
   </div>
-
 
   <script src="script.js"></script>
 </body>
