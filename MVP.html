@@ -19,8 +19,10 @@
       /* Prevent horizontal scroll during flip */
       min-height: 100vh;
       /* Ensure body takes full height */
-      font-size: 16px; /* Base font size */
-      line-height: 1.5; /* Base line height */
+      font-size: 16px;
+      /* Base font size */
+      line-height: 1.5;
+      /* Base line height */
     }
 
     /* Base (Light Mode) body styles */
@@ -354,6 +356,101 @@
         transform: none;
       }
     }
+
+/* Pomodoro Timer Styles (Refined) */
+    #pomodoroTimer {
+      background-color: rgb(251, 171, 161); /* Light Red/Pink for Light Mode (like btn-red) */
+      color: #3b0b39; /* Dark red text */
+      transition: all 0.4s ease;
+      border: 1px solid #9a9a9a; /* Border for subtle definition */
+    }
+
+    body.dark #pomodoroTimer {
+      background-color: #3a1638; /* Darker Orange/Brown for Dark Mode */
+      color: #c299dc; /* Light cream text */
+      border-color: #8b8b8b; /* Orange border */
+    }
+
+    #pomodoroTimer #countdown {
+      color: #980000; /* Stronger Red for Light Mode numbers */
+      transition: color 0.4s ease;
+    }
+
+    body.dark #pomodoroTimer #countdown {
+      color: #FCD34D; /* Yellow for Dark Mode numbers */
+    }
+
+    /* Pomodoro Buttons - Sleeker Look */
+    #pomodoroTimer button {
+      /* Base styles for all timer buttons */
+      padding: 0.6rem 1.5rem; /* More padding */
+      border-radius: 9999px; /* Fully rounded/pill shape */
+      font-weight: 600; /* Semi-bold */
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06); /* Subtle shadow */
+      transition: all 0.2s ease-in-out; /* Smooth transitions */
+      border: none; /* Remove default button border */
+    }
+
+    /* Start Button - Light Mode */
+    #startTimerBtn {
+      background-color: #10B981; /* Green */
+      color: white;
+    }
+
+    #startTimerBtn:hover {
+      background-color: #059669; /* Darker Green */
+      transform: translateY(-1px); /* Slight lift */
+      box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15), 0 3px 5px -2px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Pause Button - Light Mode */
+    #pauseTimerBtn {
+      background-color: #F59E0B; /* Amber/Orange */
+      color: white;
+    }
+
+    #pauseTimerBtn:hover {
+      background-color: #D97706; /* Darker Amber */
+      transform: translateY(-1px);
+      box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15), 0 3px 5px -2px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Reset Button - Light Mode */
+    #resetTimerBtn {
+      background-color: #EF4444; /* Red */
+      color: white;
+    }
+
+    #resetTimerBtn:hover {
+      background-color: #DC2626; /* Darker Red */
+      transform: translateY(-1px);
+      box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15), 0 3px 5px -2px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Dark Mode specific button styles */
+    body.dark #startTimerBtn {
+      background-color: #34D399; /* Lighter Green for Dark Mode */
+      color: #1F2937; /* Dark text for contrast */
+    }
+    body.dark #startTimerBtn:hover {
+      background-color: #10B981;
+    }
+
+    body.dark #pauseTimerBtn {
+      background-color: #FCD34D; /* Yellow for Dark Mode */
+      color: #1F2937;
+    }
+    body.dark #pauseTimerBtn:hover {
+      background-color: #FACC15;
+    }
+
+    body.dark #resetTimerBtn {
+      background-color: #F87171; /* Lighter Red for Dark Mode */
+      color: #1F2937;
+    }
+    body.dark #resetTimerBtn:hover {
+      background-color: #EF4444;
+    }
   </style>
 </head>
 
@@ -366,12 +463,10 @@
   <div class="max-w-6xl mx-auto mt-10 px-4 py-8 rounded-3xl main-content-wrapper">
 
     <div class="flex justify-center mb-6">
-      <button id="showMainTaskBtn"
-        class="px-6 py-2 rounded-l-full font-bold transition-colors shadow">
+      <button id="showMainTaskBtn" class="px-6 py-2 rounded-l-full font-bold transition-colors shadow">
         Today's Task
       </button>
-      <button id="showAllTasksBtn"
-        class="px-6 py-2 rounded-r-full font-bold transition-colors shadow">
+      <button id="showAllTasksBtn" class="px-6 py-2 rounded-r-full font-bold transition-colors shadow">
         All Tasks
       </button>
     </div>
@@ -396,6 +491,28 @@
             <button class="px-4 py-2 rounded font-medium shadow btn-pink">
               Mark Done
             </button>
+          </div>
+
+          <div id="pomodoroTimer"
+            class="hidden text-center mt-6 p-4 rounded-lg bg-blue-100 dark:bg-blue-900 shadow">
+            <h3 id="timerStatus" class="text-lg font-semibold text-blue-800 dark:text-red-600 mb-2">Focus Time!</h3>
+            <div class="text-5xl font-bold text-blue-700 dark:text-blue-100" id="countdown">25:00</div>
+            <div class="flex justify-center gap-4 mt-4">
+              <button id="startTimerBtn"
+                class="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700">Start</button>
+              <button id="pauseTimerBtn"
+                class="px-4 py-2 rounded bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700">Pause</button>
+              <button id="resetTimerBtn"
+                class="px-4 py-2 rounded bg-red-500 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700">Reset</button>
+            </div>
+          </div>
+           <div id="progressBarContainer" class="hidden mt-6">
+            <div class="relative pt-1">
+              <div class="overflow-hidden h-4 mb-4 text-xs flex rounded bg-pink-200 dark:bg-pink-900">
+                <div id="progressBarFill" style="width:0%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-pink-500 transition-all duration-500 ease-out"></div>
+              </div>
+              <p id="progressText" class="text-sm font-medium text-gray-700 dark:text-gray-300 text-center"></p>
+            </div>
           </div>
           <ul id="stepList" class="list-disc list-inside space-y-1"></ul>
           <div id="stepForm" class="hidden flex gap-2">
