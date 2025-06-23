@@ -15,6 +15,19 @@ const bookContainer = document.querySelector(".book-container");
 const showMainTaskBtn = document.getElementById("showMainTaskBtn");
 const showAllTasksBtn = document.getElementById("showAllTasksBtn");
 
+// Pomodoro Timer Elements
+const pomodoroTimer = document.getElementById("pomodoroTimer");
+const timerStatus = document.getElementById("timerStatus");
+const countdown = document.getElementById("countdown");
+const startTimerBtn = document.getElementById("startTimerBtn");
+const pauseTimerBtn = document.getElementById("pauseTimerBtn");
+const resetTimerBtn = document.getElementById("resetTimerBtn");
+
+// Progress Bar Elements (assuming you've added the HTML for these)
+const progressBarContainer = document.getElementById('progressBarContainer');
+const progressBarFill = document.getElementById('progressBarFill');
+const progressText = document.getElementById('progressText');
+
 
 // --- Task Data and Persistence ---
 let tasks = [];
@@ -23,11 +36,24 @@ let mainTask = null; // Variable to hold the reference to today's most important
 // Load tasks from localStorage on script initialization
 const storedTasks = localStorage.getItem("tasks");
 if (storedTasks) {
-  tasks = JSON.parse(storedTasks).map((task) => ({
-    ...task,
-    done: task.done || false,
-    isMainTask: task.isMainTask || false, // Ensure isMainTask property exists
-  }));
+  tasks = JSON.parse(storedTasks).map((task) => {
+    // Ensure 'done' and 'isMainTask' properties exist
+    task.done = task.done || false;
+    task.isMainTask = task.isMainTask || false;
+    // IMPORTANT: Ensure subtasks are also objects, not just strings
+    // This handles cases where old data might have subtasks as strings
+    if (task.subtasks && Array.isArray(task.subtasks)) {
+      task.subtasks = task.subtasks.map(sub => {
+        if (typeof sub === 'string') {
+          return { text: sub, done: false };
+        }
+        return sub; // Already an object
+      });
+    } else {
+      task.subtasks = []; // Initialize if null/undefined
+    }
+    return task;
+  });
   // Find the main task if it exists (and is not done)
   mainTask = tasks.find((task) => task.isMainTask && !task.done);
 }
@@ -35,6 +61,15 @@ if (storedTasks) {
 function saveTasks() {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }
+
+// --- Pomodoro Timer Variables ---
+const FOCUS_TIME = 25 * 60; // 25 minutes in seconds
+const BREAK_TIME = 5 * 60; // 5 minutes in seconds
+let timer = FOCUS_TIME;
+let isRunning = false;
+let intervalId = null;
+let isFocusSession = true; // true for focus, false for break
+
 
 // --- Tips Array ---
 const tips = [
@@ -51,8 +86,7 @@ const tips = [
   "Don't listen to music that makes you restless, or makes you think only about it.",
   "Try doing just a tiny peace of the task, it can help you get started. and then you will be more okay with continuing.",
   "Visualize the end result to stay motivated.",
-  "Plan how you'll do the task, try to gaslight yourself into falling in love with the process!",
-  "You may feel sad if you failed to do the task for a few days, try and plan it, sleep it off, it will be okay, I promise!"
+  "Plan how you'll do the task, try to gaslight yourself into falling in love with the process!"
 ];
 
 // --- Utility Functions ---
@@ -72,6 +106,7 @@ function displayRandomTip(tipContainerId) {
     displayRandomTip(tipContainerId);
 }
 
+
 // --- Right Panel (All Tasks) Functions ---
 function addTask() {
   const taskInput2 = document.getElementById("taskInput2");
@@ -81,6 +116,8 @@ function addTask() {
   const task = {
     id: Date.now(),
     title: title,
+    // When adding from right panel, subtasks are still just strings here
+    // If you later want progress on these, you'd convert them when opening for editing
     subtasks: [],
     done: false,
     isMainTask: false, // Default to false for tasks added via the right panel
@@ -111,7 +148,7 @@ function renderTasksOnRightPanel() {
 
   tasksToRender.forEach((task) => {
     // Only render tasks that are not done (unless they were main tasks that are now done)
-    if (task.done && !task.isMainTask) return; // Don't show regular done tasks
+    if (task.done && !task.isMainTask) return; // Don't show regular done tasks that are NOT main tasks
 
     const newTaskDiv = document.createElement("div");
     newTaskDiv.classList.add(
@@ -137,7 +174,7 @@ function renderTasksOnRightPanel() {
       "hover:bg-red-400",
       "btn-red"
     );
-     removeBtn.textContent = "Done";
+    removeBtn.textContent = "Done";
     removeBtn.onclick = () => {
       // Find the index of the task to remove
       const taskIndex = tasks.findIndex((t) => t.id === task.id);
@@ -195,7 +232,11 @@ function openTaskPage(taskId) {
     const input = subtaskForm.querySelector("input");
     const text = input.value.trim();
     if (!text) return;
-    task.subtasks.push(text);
+
+    // *** IMPORTANT: Ensure subtasks added from this panel are also objects ***
+    task.subtasks.push({ text: text, done: false });
+    // *********************************************************************
+
     saveTasks();
     input.value = "";
     renderSubtaskList(task);
@@ -239,9 +280,12 @@ function renderSubtaskList(task) {
   const list = document.getElementById("subtaskList");
   if (!list) return;
   list.innerHTML = "";
-  task.subtasks.forEach((sub) => {
+  task.subtasks.forEach((sub, index) => { // Added index for potential future use
     const li = document.createElement("li");
-    li.textContent = sub;
+    // Display text content from the subtask object
+    li.textContent = sub.text; // Access .text property
+    // You could add a checkbox here too if you want to mark subtasks done
+    // in the "All Tasks" view. For now, it's just the text.
     list.appendChild(li);
   });
 }
@@ -250,17 +294,23 @@ function renderSubtaskList(task) {
 function renderMainTask() {
   if (mainTask && !mainTask.done) {
     taskInput.value = mainTask.title;
-    taskInput.disabled = true; // Disable input when task is set
-    addStepBtn.style.display = "block"; // Show "Add Step" button
-    markDoneBtn.style.display = "block"; // Show "Mark Done" button
+    taskInput.disabled = true;
+    addStepBtn.style.display = "block";
+    markDoneBtn.style.display = "block";
+    stepForm.classList.remove("hidden"); // Ensure step form is visible when main task is active
     renderMainTaskSteps();
+    togglePomodoroDisplay(true); // Show the timer when a main task is active
   } else {
     taskInput.value = "";
-    taskInput.disabled = false; // Enable input when no task or task is done
+    taskInput.disabled = false;
     stepList.innerHTML = "";
     stepForm.classList.add("hidden");
     addStepBtn.style.display = "none";
     markDoneBtn.style.display = "none";
+    togglePomodoroDisplay(false); // Hide the timer when no main task or it's done
+    if (progressBarContainer) { // Hide progress bar if no main task
+      progressBarContainer.classList.add('hidden');
+    }
   }
 }
 
@@ -276,15 +326,12 @@ function addMainTask() {
   // If there's an old main task that's done, set its `isMainTask` to false
   if (mainTask && mainTask.done) {
     mainTask.isMainTask = false;
-    // We should also remove it from the tasks array if it's not needed anymore,
-    // or keep it for history but ensure it's not marked as mainTask.
-    // For now, simply setting isMainTask to false is sufficient.
   }
 
   mainTask = {
     id: Date.now(),
     title: title,
-    subtasks: [],
+    subtasks: [], // Initialize subtasks as an empty array of objects
     done: false,
     isMainTask: true,
   };
@@ -294,15 +341,46 @@ function addMainTask() {
   renderTasksOnRightPanel(); // Update right panel (should hide active main task)
 }
 
+// --- Updated renderMainTaskSteps for Progress Tracking ---
 function renderMainTaskSteps() {
   stepList.innerHTML = "";
   if (mainTask && mainTask.subtasks.length > 0) {
-    mainTask.subtasks.forEach((step) => {
+    mainTask.subtasks.forEach((step, index) => { // 'step' is now an object, and we need 'index'
       const li = document.createElement("li");
-      li.textContent = step;
+      li.classList.add("flex", "items-center", "justify-between", "py-1");
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.classList.add("form-checkbox", "h-4", "w-4", "text-pink-600", "rounded", "mr-2");
+      checkbox.checked = step.done; // Set checked status based on step.done
+      checkbox.onchange = () => toggleSubtaskDone(index); // Call a new function on change
+
+      const span = document.createElement("span");
+      span.textContent = step.text;
+      span.classList.add("flex-1", "mr-2"); // Initial classes for span
+
+      // Apply line-through and adjust text color based on step.done and theme
+      if (step.done) {
+        span.classList.add("line-through");
+        body.classList.contains("dark") ? span.classList.add("text-gray-400") : span.classList.add("text-gray-500");
+      } else {
+        span.classList.remove("line-through");
+        // Ensure text color is reset to default for active tasks
+        body.classList.contains("dark") ? span.classList.add("text-white") : span.classList.add("text-gray-800");
+      }
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.innerHTML = '🗑️'; // Trash can emoji
+      deleteBtn.classList.add("ml-2", "text-red-500", "hover:text-red-700", "px-1", "py-0.5", "rounded", "text-sm");
+      deleteBtn.onclick = () => deleteSubtask(index); // Call a new function to delete
+
+      li.appendChild(checkbox);
+      li.appendChild(span);
+      li.appendChild(deleteBtn);
       stepList.appendChild(li);
     });
   }
+  updateMainTaskProgressBar(); // Call this new function after rendering steps
 }
 
 function showStepForm() {
@@ -320,9 +398,12 @@ function submitStep() {
   const value = stepInput.value.trim();
   if (!value) return;
 
-  mainTask.subtasks.push(value);
+  // *** CRUCIAL CHANGE: Pushing an object for subtasks ***
+  mainTask.subtasks.push({ text: value, done: false });
+  // *****************************************************
+
   saveTasks();
-  renderMainTaskSteps();
+  renderMainTaskSteps(); // This will also trigger updateMainTaskProgressBar()
 
   stepInput.value = "";
   stepInput.focus();
@@ -338,7 +419,142 @@ function markMainTaskDone() {
   mainTask = null; // Clear main task reference as it's done
   renderMainTask(); // Re-render the left panel to clear the done task
   renderTasksOnRightPanel(); // Update the right panel
+  resetTimer(); // Reset the timer when the main task is done
 }
+
+
+// --- NEW Subtask Management Functions for Main Task ---
+function toggleSubtaskDone(index) {
+  if (mainTask && mainTask.subtasks[index]) {
+    mainTask.subtasks[index].done = !mainTask.subtasks[index].done;
+    saveTasks();
+    renderMainTaskSteps(); // Re-render to update visual state (line-through, checkbox)
+    checkAndMarkMainTaskDoneIfAllSubtasksAreDone(); // Check if all subtasks are done
+  }
+}
+
+function deleteSubtask(index) {
+  if (mainTask && mainTask.subtasks[index]) {
+    mainTask.subtasks.splice(index, 1);
+    saveTasks();
+    renderMainTaskSteps(); // Re-render list and update progress bar
+  }
+}
+
+// --- NEW Progress Bar Functions ---
+function updateMainTaskProgressBar() {
+  if (!progressBarContainer || !progressBarFill || !progressText) {
+    console.warn("Progress bar elements not found in DOM.");
+    return;
+  }
+
+  if (!mainTask || mainTask.subtasks.length === 0) {
+    progressBarContainer.classList.add('hidden'); // Hide if no main task or no subtasks
+    return;
+  }
+
+  const completedSteps = mainTask.subtasks.filter(step => step.done).length;
+  const totalSteps = mainTask.subtasks.length;
+  const percentage = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
+
+  progressBarFill.style.width = `${percentage}%`;
+  progressText.textContent = `${completedSteps}/${totalSteps} steps completed (${Math.round(percentage)}%)`;
+
+  progressBarContainer.classList.remove('hidden'); // Show the bar
+}
+
+function checkAndMarkMainTaskDoneIfAllSubtasksAreDone() {
+  if (mainTask && mainTask.subtasks.length > 0) {
+    const allSubtasksDone = mainTask.subtasks.every(step => step.done);
+    if (allSubtasksDone && !mainTask.done) {
+      // Small delay to allow user to see 100% before alert and task removal
+      setTimeout(() => {
+        markMainTaskDone(); // Use the existing function
+        alert("🎉 All steps completed! Main task marked as done!");
+      }, 300); // 300ms delay
+    }
+  }
+}
+
+
+// --- Pomodoro Timer Functions ---
+function formatTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
+function updateTimerDisplay() {
+  countdown.textContent = formatTime(timer);
+}
+
+function startTimer() {
+  if (isRunning) return; // Prevent multiple intervals
+  isRunning = true;
+
+  intervalId = setInterval(() => {
+    timer--;
+    updateTimerDisplay();
+
+    if (timer <= 0) {
+      clearInterval(intervalId);
+      isRunning = false;
+      playNotificationSound(); // Optional: Add a sound notification
+
+      if (isFocusSession) {
+        alert("Time for a break! Take 5 minutes.");
+        timer = BREAK_TIME;
+        isFocusSession = false;
+        timerStatus.textContent = "Break Time!";
+      } else {
+        alert("Break over! Time to focus again.");
+        timer = FOCUS_TIME;
+        isFocusSession = true;
+        timerStatus.textContent = "Focus Time!";
+      }
+      updateTimerDisplay();
+      // Optionally auto-start next session, or require user click
+      // startTimer(); // Auto-start
+    }
+  }, 1000); // Update every second
+}
+
+function pauseTimer() {
+  clearInterval(intervalId);
+  isRunning = false;
+}
+
+function resetTimer() {
+  clearInterval(intervalId);
+  isRunning = false;
+  timer = FOCUS_TIME;
+  isFocusSession = true;
+  timerStatus.textContent = "Focus Time!";
+  updateTimerDisplay();
+}
+
+function playNotificationSound() {
+  // You can add a small audio file here (e.g., 'ding.mp3')
+  // const audio = new Audio('path/to/your/sound.mp3');
+  // audio.play();
+  console.log("Timer finished sound!"); // Placeholder for notification sound
+}
+
+// Function to show/hide the timer panel
+function togglePomodoroDisplay(show) {
+  if (show) {
+    pomodoroTimer.classList.remove('hidden');
+    // Ensure timer display is correct when shown (e.g., if it was reset while hidden)
+    if (!isRunning) {
+      updateTimerDisplay();
+    }
+  } else {
+    pomodoroTimer.classList.add('hidden');
+    pauseTimer(); // Pause if hidden
+    resetTimer(); // Reset if hidden
+  }
+}
+
 
 // --- Theme Toggling Logic ---
 function applyTheme(theme) {
@@ -361,23 +577,25 @@ function showPage(pageName) {
     // Set active styles for "Today's Task" button
     showMainTaskBtn.classList.add('bg-blue-400', 'text-white', 'hover:bg-blue-500');
     showMainTaskBtn.classList.remove('bg-gray-200', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-50', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
-    // Remove active styles from "All Tasks" button
-    showAllTasksBtn.classList.remove('bg-blue-400', 'text-white', 'hover:bg-blue-500');
-    showAllTasksBtn.classList.add('bg-gray-200', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-50', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
   } else if (pageName === 'allTasks') {
     bookContainer.classList.remove('show-left');
     bookContainer.classList.add('show-right');
     // Set active styles for "All Tasks" button
     showAllTasksBtn.classList.add('bg-blue-400', 'text-white', 'hover:bg-blue-500');
     showAllTasksBtn.classList.remove('bg-gray-200', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-50', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
-    // Remove active styles from "Today's Task" button
+  }
+  // Remove active styles from the other button regardless of which page is selected
+  if (pageName === 'mainTask') {
+    showAllTasksBtn.classList.remove('bg-blue-400', 'text-white', 'hover:bg-blue-500');
+    showAllTasksBtn.classList.add('bg-gray-200', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-50', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
+  } else {
     showMainTaskBtn.classList.remove('bg-blue-400', 'text-white', 'hover:bg-blue-500');
     showMainTaskBtn.classList.add('bg-gray-200', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-50', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
   }
 }
 
 
-// --- Event Listeners (initially, then dynamically assigned) ---
+// --- Event Listeners ---
 // Left Panel (Main Task) event listener for input
 taskInput.addEventListener("keypress", (e) => {
   if (e.key === "Enter") {
@@ -412,6 +630,11 @@ toggleBtn.addEventListener("click", () => {
 showMainTaskBtn.addEventListener('click', () => showPage('mainTask'));
 showAllTasksBtn.addEventListener('click', () => showPage('allTasks'));
 
+// Pomodoro Timer Event Listeners
+startTimerBtn.addEventListener('click', startTimer);
+pauseTimerBtn.addEventListener('click', pauseTimer);
+resetTimerBtn.addEventListener('click', resetTimer);
+
 
 // --- Initial Setup on DOM Load ---
 document.addEventListener("DOMContentLoaded", () => {
@@ -432,4 +655,6 @@ document.addEventListener("DOMContentLoaded", () => {
   renderMainTask();
   renderTasksOnRightPanel();
   showPage('mainTask'); // Default to showing the "Today's Task" page on load
+
+  updateMainTaskProgressBar(); // <--- This ensures the progress bar is shown/updated on load
 });
