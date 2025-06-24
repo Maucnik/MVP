@@ -1,554 +1,831 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MVP Task Buddy</title>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MVP Task Buddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 
-  <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
 
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+      /* Global body styles */
+      body {
+        font-family: "Fira Sans", sans-serif;
+        transition: all 0.4s ease;
+        overflow-x: hidden;
+        /* Prevent horizontal scroll during flip */
+        min-height: 100vh;
+        /* Ensure body takes full height */
+        font-size: 16px;
+        /* Base font size */
+        line-height: 1.5;
+        /* Base line height */
+      }
 
-  <style>
-    /* Global body styles */
-    body {
-      font-family: "Fira Sans", sans-serif;
-      transition: all 0.4s ease;
-      overflow-x: hidden;
-      /* Prevent horizontal scroll during flip */
-      min-height: 100vh;
-      /* Ensure body takes full height */
-      font-size: 16px;
-      /* Base font size */
-      line-height: 1.5;
-      /* Base line height */
-    }
+      /* Base (Light Mode) body styles */
+      body.light {
+        background-image: linear-gradient(
+            to bottom,
+            rgba(253, 230, 138, 0.5),
+            rgba(252, 165, 165, 0.6)
+          ),
+          url("images/LM.png");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        color: #1f2937;
+        /* gray-800 */
+      }
 
-    /* Base (Light Mode) body styles */
-    body.light {
-      background-image: linear-gradient(
-          to bottom,
-          rgba(253, 230, 138, 0.5),
-          rgba(252, 165, 165, 0.6)
-        ),
-        url("images/LM.png");
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-      color: #1f2937;
-      /* gray-800 */
-    }
+      /* Dark Mode body styles */
+      body.dark {
+        background-image: linear-gradient(
+            to bottom,
+            rgba(31, 41, 55, 0.8),
+            rgba(17, 24, 39, 0.9)
+          ),
+          url("images/LM-dark.png");
+        background-size: cover;
+        background-position: top;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        color: #f9fafb;
+        /* light text */
+      }
 
-    /* Dark Mode body styles */
-    body.dark {
-      background-image: linear-gradient(
-          to bottom,
-          rgba(31, 41, 55, 0.8),
-          rgba(17, 24, 39, 0.9)
-        ),
-        url("images/LM-dark.png");
-      background-size: cover;
-      background-position: top;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-      color: #f9fafb;
-      /* light text */
-    }
+      /* --- Custom Styles for Light/Dark Mode Containers and Elements --- */
 
-    /* --- Custom Styles for Light/Dark Mode Containers and Elements --- */
+      /* Main Content Wrapper (the overall app container) */
+      .main-content-wrapper {
+        background: linear-gradient(to bottom right, #fde68a, #fbcfe8);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        border: 1px solid transparent;
+        transition: all 0.4s ease;
+      }
 
-    /* Main Content Wrapper (the overall app container) */
-    .main-content-wrapper {
-      background: linear-gradient(to bottom right, #FDE68A, #FBCFE8);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-      border: 1px solid transparent;
-      transition: all 0.4s ease;
-    }
+      body.dark .main-content-wrapper {
+        background: linear-gradient(to bottom right, #4b5563, #1f2937);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5),
+          0 10px 10px -5px rgba(0, 0, 0, 0.3);
+        border-color: #374151;
+      }
 
-    body.dark .main-content-wrapper {
-      background: linear-gradient(to bottom right, #4B5563, #1F2937);
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
-      border-color: #374151;
-    }
+      /* Left Panel (Today's Most Important Task) */
+      .left-panel {
+        background-color: #ffffff;
+        border: 1px solid #fdf7ea;
+        transition: all 0.4s ease;
+      }
 
-    /* Left Panel (Today's Most Important Task) */
-    .left-panel {
-      background-color: #FFFFFF;
-      border: 1px solid #FDF7EA;
-      transition: all 0.4s ease;
-    }
+      body.dark .left-panel {
+        background-color: #1f2937;
+        border-color: #374151;
+      }
 
-    body.dark .left-panel {
-      background-color: #1F2937;
-      border-color: #374151;
-    }
+      /* Left Panel Title */
+      .left-panel h2 {
+        color: #b45309;
+        transition: color 0.4s ease;
+      }
 
-    /* Left Panel Title */
-    .left-panel h2 {
-      color: #B45309;
-      transition: color 0.4s ease;
-    }
+      body.dark .left-panel h2 {
+        color: #fcd34d;
+      }
 
-    body.dark .left-panel h2 {
-      color: #FCD34D;
-    }
+      /* Left Panel Paragraph */
+      .left-panel p {
+        color: #92400e;
+        transition: color 0.4s ease;
+      }
 
-    /* Left Panel Paragraph */
-    .left-panel p {
-      color: #92400E;
-      transition: color 0.4s ease;
-    }
+      body.dark .left-panel p {
+        color: #d1d5db;
+      }
 
-    body.dark .left-panel p {
-      color: #D1D5DB;
-    }
+      /* Inputs (General style for all inputs in the app) */
+      input[type="text"] {
+        background-color: #ffffff;
+        border: 1px solid #d1d5db;
+        color: #1f2937;
+        /* gray-800 */
+        transition: all 0.4s ease;
+      }
 
-    /* Inputs (General style for all inputs in the app) */
-    input[type="text"] {
-      background-color: #FFFFFF;
-      border: 1px solid #D1D5DB;
-      color: #1F2937;
-      /* gray-800 */
-      transition: all 0.4s ease;
-    }
+      input[type="text"]::placeholder {
+        color: #6b7280;
+        /* gray-500 */
+      }
 
-    input[type="text"]::placeholder {
-      color: #6B7280;
-      /* gray-500 */
-    }
+      body.dark input[type="text"] {
+        background-color: #374151;
+        border-color: #4b5563;
+        color: #f9fafb;
+        /* white */
+      }
 
-    body.dark input[type="text"] {
-      background-color: #374151;
-      border-color: #4B5563;
-      color: #F9FAFB;
-      /* white */
-    }
+      body.dark input[type="text"]::placeholder {
+        color: #9ca3af;
+        /* gray-400 */
+      }
 
-    body.dark input[type="text"]::placeholder {
-      color: #9CA3AF;
-      /* gray-400 */
-    }
+      /* Add Step and Mark Done Buttons */
+      .btn-yellow {
+        background-color: #fde047;
+        color: #92400e;
+        transition: all 0.4s ease;
+      }
 
-    /* Add Step and Mark Done Buttons */
-    .btn-yellow {
-      background-color: #FDE047;
-      color: #92400E;
-      transition: all 0.4s ease;
-    }
+      .btn-yellow:hover {
+        background-color: #facc15;
+      }
 
-    .btn-yellow:hover {
-      background-color: #FACC15;
-    }
+      body.dark .btn-yellow {
+        background-color: #d97706;
+        color: #ffffff;
+      }
 
-    body.dark .btn-yellow {
-      background-color: #D97706;
-      color: #FFFFFF;
-    }
+      body.dark .btn-yellow:hover {
+        background-color: #b45309;
+      }
 
-    body.dark .btn-yellow:hover {
-      background-color: #B45309;
-    }
+      .btn-pink {
+        background-color: #fbcfe8;
+        color: #9d174d;
+        transition: all 0.4s ease;
+      }
 
-    .btn-pink {
-      background-color: #FBCFE8;
-      color: #9D174D;
-      transition: all 0.4s ease;
-    }
+      .btn-pink:hover {
+        background-color: #f472b6;
+      }
 
-    .btn-pink:hover {
-      background-color: #F472B6;
-    }
+      body.dark .btn-pink {
+        background-color: #db2777;
+        color: #ffffff;
+      }
 
-    body.dark .btn-pink {
-      background-color: #DB2777;
-      color: #FFFFFF;
-    }
+      body.dark .btn-pink:hover {
+        background-color: #be185d;
+      }
 
-    body.dark .btn-pink:hover {
-      background-color: #BE185D;
-    }
+      /* Step List Items */
+      #stepList li {
+        color: #92400e;
+        transition: color 0.4s ease;
+      }
 
+      body.dark #stepList li {
+        color: #d1d5db;
+      }
 
-    /* Step List Items */
-    #stepList li {
-      color: #92400E;
-      transition: color 0.4s ease;
-    }
+      /* Right Panel (MVP: Let's finish those tasks together!) */
+      .right-panel {
+        background-color: #ffffff;
+        border: 1px solid #fdba74;
+        transition: all 0.4s ease;
+      }
 
-    body.dark #stepList li {
-      color: #D1D5DB;
-    }
+      body.dark .right-panel {
+        background-color: #1f2937;
+        border-color: #374151;
+      }
 
-    /* Right Panel (MVP: Let's finish those tasks together!) */
-    .right-panel {
-      background-color: #FFFFFF;
-      border: 1px solid #FDBA74;
-      transition: all 0.4s ease;
-    }
+      /* Right Panel Title */
+      .right-panel h1 {
+        color: #1f2937;
+        transition: color 0.4s ease;
+      }
 
-    body.dark .right-panel {
-      background-color: #1F2937;
-      border-color: #374151;
-    }
+      body.dark .right-panel h1 {
+        color: #f9fafb;
+      }
 
-    /* Right Panel Title */
-    .right-panel h1 {
-      color: #1F2937;
-      transition: color 0.4s ease;
-    }
+      /* No task selected message */
+      #taskPage p.italic {
+        color: #4b5563;
+        transition: color 0.4s ease;
+      }
 
-    body.dark .right-panel h1 {
-      color: #F9FAFB;
-    }
+      body.dark #taskPage p.italic {
+        color: #9ca3af;
+      }
 
-    /* No task selected message */
-    #taskPage p.italic {
-      color: #4B5563;
-      transition: color 0.4s ease;
-    }
+      /* Dynamically added task item */
+      .task-item {
+        background-color: #fbcfe8;
+        color: #1f2937;
+        /* Default text color for task item */
+        transition: all 0.4s ease;
+      }
 
-    body.dark #taskPage p.italic {
-      color: #9CA3AF;
-    }
+      body.dark .task-item {
+        background-color: #374151;
+        color: #f9fafb;
+        /* Dark mode text color for task item */
+      }
 
-    /* Dynamically added task item */
-    .task-item {
-      background-color: #FBCFE8;
-      color: #1F2937;
-      /* Default text color for task item */
-      transition: all 0.4s ease;
-    }
+      /* Done button on task item */
+      .task-item .btn-red {
+        background-color: #fca5a5;
+        color: #991b1b;
+        transition: all 0.4s ease;
+      }
 
-    body.dark .task-item {
-      background-color: #374151;
-      color: #F9FAFB;
-      /* Dark mode text color for task item */
-    }
+      .task-item .btn-red:hover {
+        background-color: #f87171;
+      }
 
-    /* Done button on task item */
-    .task-item .btn-red {
-      background-color: #FCA5A5;
-      color: #991B1B;
-      transition: all 0.4s ease;
-    }
+      body.dark .task-item .btn-red {
+        background-color: #dc2626;
+        color: #ffffff;
+      }
 
-    .task-item .btn-red:hover {
-      background-color: #F87171;
-    }
+      body.dark .task-item .btn-red:hover {
+        background-color: #b91c1c;
+      }
 
-    body.dark .task-item .btn-red {
-      background-color: #DC2626;
-      color: #FFFFFF;
-    }
-
-    body.dark .task-item .btn-red:hover {
-      background-color: #B91C1C;
-    }
-
-    /* --- Page Turn Effect Styles --- */
-    /* Container for the two "pages" */
-    .book-container {
-      position: relative;
-      width: 100%;
-      /* Occupy full width of its flex parent */
-      height: auto;
-      /* Height determined by content */
-      perspective: 1500px;
-      /* Depth for 3D effect */
-      transform-style: preserve-3d;
-      /* Children render in 3D space */
-      display: flex;
-      /* Arrange children side-by-side initially */
-      justify-content: center;
-      /* Center the book visually */
-      align-items: flex-start;
-      /* Align content at top within the flex container */
-      gap: 2rem;
-      /* Spacing between the "pages" when open */
-    }
-
-    /* Individual "page" panels */
-    .book-page {
-      position: relative;
-      flex: 1;
-      /* Each page takes equal width */
-      transform-origin: left center;
-      /* Rotate from the left edge for the left page */
-      transition: transform 0.8s ease-in-out, opacity 0.4s;
-      /* Smooth rotation and fade */
-      backface-visibility: hidden;
-      /* Hide the back of the page during rotation */
-      min-width: 0;
-      /* Allow flex items to shrink */
-    }
-
-    /* State when the "Today's Task" page (left) is active/visible */
-    .book-container.show-left .left-panel {
-      transform: rotateY(0deg);
-      /* Left page is flat, facing forward */
-      opacity: 1;
-      pointer-events: auto;
-      /* Allow interaction */
-    }
-
-    .book-container.show-left .right-panel {
-      transform: rotateY(180deg);
-      /* Right page is rotated 180deg to hide its front */
-      opacity: 0;
-      pointer-events: none;
-      /* Disable interaction with hidden right page */
-    }
-
-    /* State when the "All Tasks" page (right) is active/visible */
-    .book-container.show-right .left-panel {
-      transform: rotateY(-180deg);
-      /* Left page rotates -180deg to hide its front */
-      opacity: 0;
-      pointer-events: none;
-      /* Disable interaction with hidden left page */
-    }
-
-    .book-container.show-right .right-panel {
-      transform: rotateY(0deg);
-      /* Right page is flat, facing forward */
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    /* Media query for smaller screens (e.g., mobile) */
-    @media (max-width: 1023px) {
+      /* --- Page Turn Effect Styles --- */
+      /* Container for the two "pages" */
       .book-container {
-        flex-direction: column;
-        /* Stack panels vertically */
-        perspective: none;
-        /* Disable 3D perspective */
-        transform-style: flat;
-        /* Disable 3D transforms */
-        gap: 1rem;
-        /* Reduce gap */
+        position: relative;
+        width: 100%;
+        /* Occupy full width of its flex parent */
+        height: auto;
+        /* Height determined by content */
+        perspective: 1500px;
+        /* Depth for 3D effect */
+        transform-style: preserve-3d;
+        /* Children render in 3D space */
+        display: flex;
+        /* Arrange children side-by-side initially */
+        justify-content: center;
+        /* Center the book visually */
+        align-items: flex-start;
+        /* Align content at top within the flex container */
+        gap: 2rem;
+        /* Spacing between the "pages" when open */
       }
 
+      /* Individual "page" panels */
       .book-page {
-        transform-origin: center center;
-        /* No specific 3D origin needed */
-        transition: none;
-        /* No 3D transition */
-        backface-visibility: visible;
-        /* No need to hide backface */
+        position: relative;
+        flex: 1;
+        /* Each page takes equal width */
+        transform-origin: left center;
+        /* Rotate from the left edge for the left page */
+        transition: transform 0.8s ease-in-out, opacity 0.4s;
+        /* Smooth rotation and fade */
+        backface-visibility: hidden;
+        /* Hide the back of the page during rotation */
+        min-width: 0;
+        /* Allow flex items to shrink */
       }
 
-      /* Hide/show panels directly on small screens without 3D flip */
-      .book-container.show-right .left-panel,
-      .book-container.show-left .right-panel {
-        display: none;
-        opacity: 0;
-        transform: none;
-        /* Ensure no lingering transforms */
-      }
-
-      .book-container.show-left .left-panel,
-      .book-container.show-right .right-panel {
-        display: block;
-        /* Show the active panel */
+      /* State when the "Today's Task" page (left) is active/visible */
+      .book-container.show-left .left-panel {
+        transform: rotateY(0deg);
+        /* Left page is flat, facing forward */
         opacity: 1;
-        transform: none;
+        pointer-events: auto;
+        /* Allow interaction */
       }
-    }
 
-/* Pomodoro Timer Styles (Refined) */
-    #pomodoroTimer {
-      background-color: rgb(251, 171, 161); /* Light Red/Pink for Light Mode (like btn-red) */
-      color: #3b0b39; /* Dark red text */
-      transition: all 0.4s ease;
-      border: 1px solid #9a9a9a; /* Border for subtle definition */
-    }
+      .book-container.show-left .right-panel {
+        transform: rotateY(180deg);
+        /* Right page is rotated 180deg to hide its front */
+        opacity: 0;
+        pointer-events: none;
+        /* Disable interaction with hidden right page */
+      }
 
-    body.dark #pomodoroTimer {
-      background-color: #3a1638; /* Darker Orange/Brown for Dark Mode */
-      color: #c299dc; /* Light cream text */
-      border-color: #8b8b8b; /* Orange border */
-    }
+      /* State when the "All Tasks" page (right) is active/visible */
+      .book-container.show-right .left-panel {
+        transform: rotateY(-180deg);
+        /* Left page rotates -180deg to hide its front */
+        opacity: 0;
+        pointer-events: none;
+        /* Disable interaction with hidden left page */
+      }
 
-    #pomodoroTimer #countdown {
-      color: #980000; /* Stronger Red for Light Mode numbers */
-      transition: color 0.4s ease;
-    }
+      .book-container.show-right .right-panel {
+        transform: rotateY(0deg);
+        /* Right page is flat, facing forward */
+        opacity: 1;
+        pointer-events: auto;
+      }
 
-    body.dark #pomodoroTimer #countdown {
-      color: #FCD34D; /* Yellow for Dark Mode numbers */
-    }
+      /* Media query for smaller screens (e.g., mobile) */
+      @media (max-width: 1023px) {
+        .book-container {
+          flex-direction: column;
+          /* Stack panels vertically */
+          perspective: none;
+          /* Disable 3D perspective */
+          transform-style: flat;
+          /* Disable 3D transforms */
+          gap: 1rem;
+          /* Reduce gap */
+        }
 
-    /* Pomodoro Buttons - Sleeker Look */
-    #pomodoroTimer button {
-      /* Base styles for all timer buttons */
-      padding: 0.6rem 1.5rem; /* More padding */
-      border-radius: 9999px; /* Fully rounded/pill shape */
-      font-weight: 600; /* Semi-bold */
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06); /* Subtle shadow */
-      transition: all 0.2s ease-in-out; /* Smooth transitions */
-      border: none; /* Remove default button border */
-    }
+        .book-page {
+          transform-origin: center center;
+          /* No specific 3D origin needed */
+          transition: none;
+          /* No 3D transition */
+          backface-visibility: visible;
+          /* No need to hide backface */
+        }
 
-    /* Start Button - Light Mode */
-    #startTimerBtn {
-      background-color: #10B981; /* Green */
-      color: white;
-    }
+        /* Hide/show panels directly on small screens without 3D flip */
+        .book-container.show-right .left-panel,
+        .book-container.show-left .right-panel {
+          display: none;
+          opacity: 0;
+          transform: none;
+          /* Ensure no lingering transforms */
+        }
 
-    #startTimerBtn:hover {
-      background-color: #059669; /* Darker Green */
-      transform: translateY(-1px); /* Slight lift */
-      box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15), 0 3px 5px -2px rgba(0, 0, 0, 0.08);
-    }
+        .book-container.show-left .left-panel,
+        .book-container.show-right .right-panel {
+          display: block;
+          /* Show the active panel */
+          opacity: 1;
+          transform: none;
+        }
+      }
 
-    /* Pause Button - Light Mode */
-    #pauseTimerBtn {
-      background-color: #F59E0B; /* Amber/Orange */
-      color: white;
-    }
+      /* Pomodoro Timer Styles (Refined) */
+      #pomodoroTimer {
+        background-color: rgb(
+          251,
+          171,
+          161
+        ); /* Light Red/Pink for Light Mode (like btn-red) */
+        color: #3b0b39; /* Dark red text */
+        transition: all 0.4s ease;
+        border: 1px solid #9a9a9a; /* Border for subtle definition */
+      }
 
-    #pauseTimerBtn:hover {
-      background-color: #D97706; /* Darker Amber */
-      transform: translateY(-1px);
-      box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15), 0 3px 5px -2px rgba(0, 0, 0, 0.08);
-    }
+      body.dark #pomodoroTimer {
+        background-color: #3a1638; /* Darker Orange/Brown for Dark Mode */
+        color: #c299dc; /* Light cream text */
+        border-color: #8b8b8b; /* Orange border */
+      }
 
-    /* Reset Button - Light Mode */
-    #resetTimerBtn {
-      background-color: #EF4444; /* Red */
-      color: white;
-    }
+      #pomodoroTimer #countdown {
+        color: #980000; /* Stronger Red for Light Mode numbers */
+        transition: color 0.4s ease;
+      }
 
-    #resetTimerBtn:hover {
-      background-color: #DC2626; /* Darker Red */
-      transform: translateY(-1px);
-      box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15), 0 3px 5px -2px rgba(0, 0, 0, 0.08);
-    }
+      body.dark #pomodoroTimer #countdown {
+        color: #fcd34d; /* Yellow for Dark Mode numbers */
+      }
 
-    /* Dark Mode specific button styles */
-    body.dark #startTimerBtn {
-      background-color: #34D399; /* Lighter Green for Dark Mode */
-      color: #1F2937; /* Dark text for contrast */
-    }
-    body.dark #startTimerBtn:hover {
-      background-color: #10B981;
-    }
+      /* Pomodoro Buttons - Sleeker Look */
+      #pomodoroTimer button {
+        /* Base styles for all timer buttons */
+        padding: 0.6rem 1.5rem; /* More padding */
+        border-radius: 9999px; /* Fully rounded/pill shape */
+        font-weight: 600; /* Semi-bold */
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -2px rgba(0, 0, 0, 0.06); /* Subtle shadow */
+        transition: all 0.2s ease-in-out; /* Smooth transitions */
+        border: none; /* Remove default button border */
+      }
 
-    body.dark #pauseTimerBtn {
-      background-color: #FCD34D; /* Yellow for Dark Mode */
-      color: #1F2937;
-    }
-    body.dark #pauseTimerBtn:hover {
-      background-color: #FACC15;
-    }
+      /* Start Button - Light Mode */
+      #startTimerBtn {
+        background-color: #10b981; /* Green */
+        color: white;
+      }
 
-    body.dark #resetTimerBtn {
-      background-color: #F87171; /* Lighter Red for Dark Mode */
-      color: #1F2937;
-    }
-    body.dark #resetTimerBtn:hover {
-      background-color: #EF4444;
-    }
-  </style>
-</head>
+      #startTimerBtn:hover {
+        background-color: #059669; /* Darker Green */
+        transform: translateY(-1px); /* Slight lift */
+        box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15),
+          0 3px 5px -2px rgba(0, 0, 0, 0.08);
+      }
 
-<body class="relative text-gray-800 font-sans">
-  <button id="toggleDark"
-    class="fixed top-4 right-4 z-50 bg-white/80 text-gray-800 border border-gray-300 px-4 py-2 rounded-full shadow hover:bg-gray-200 transition dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600">
-    🌙 Dark Mode
-  </button>
+      /* Pause Button - Light Mode */
+      #pauseTimerBtn {
+        background-color: #f59e0b; /* Amber/Orange */
+        color: white;
+      }
 
-  <div class="max-w-6xl mx-auto mt-10 px-4 py-8 rounded-3xl main-content-wrapper">
+      #pauseTimerBtn:hover {
+        background-color: #d97706; /* Darker Amber */
+        transform: translateY(-1px);
+        box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15),
+          0 3px 5px -2px rgba(0, 0, 0, 0.08);
+      }
 
-    <div class="flex justify-center mb-6">
-      <button id="showMainTaskBtn" class="px-6 py-2 rounded-l-full font-bold transition-colors shadow">
-        Today's Task
-      </button>
-      <button id="showAllTasksBtn" class="px-6 py-2 rounded-r-full font-bold transition-colors shadow">
-        All Tasks
-      </button>
-    </div>
+      /* Reset Button - Light Mode */
+      #resetTimerBtn {
+        background-color: #ef4444; /* Red */
+        color: white;
+      }
 
-    <div class="book-container show-left flex-col lg:flex-row">
-      <div class="book-page left-panel relative z-10 p-6 rounded-2xl shadow-lg">
-        <div class="relative z-10 space-y-4">
-          <h2 class="text-xl font-semibold">
-            📝 Today's Most Important Task
-          </h2>
-          <p>
-            Choose your most important task for today and break
-            it down into some cutie small steps! :3
-          </p>
-          <input id="taskInput" type="text"
-            class="w-full px-4 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
-            placeholder="Task" />
-          <div class="flex gap-2">
-            <button onclick="showStepForm()" class="px-4 py-2 rounded font-medium shadow btn-yellow">
-              Add Step
-            </button>
-            <button class="px-4 py-2 rounded font-medium shadow btn-pink">
-              Mark Done
-            </button>
-          </div>
+      #resetTimerBtn:hover {
+        background-color: #dc2626; /* Darker Red */
+        transform: translateY(-1px);
+        box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15),
+          0 3px 5px -2px rgba(0, 0, 0, 0.08);
+      }
 
-          <div id="pomodoroTimer"
-            class="hidden text-center mt-6 p-4 rounded-lg bg-blue-100 dark:bg-blue-900 shadow">
-            <h3 id="timerStatus" class="text-lg font-semibold text-blue-800 dark:text-red-600 mb-2">Focus Time!</h3>
-            <div class="text-5xl font-bold text-blue-700 dark:text-blue-100" id="countdown">25:00</div>
-            <div class="flex justify-center gap-4 mt-4">
-              <button id="startTimerBtn"
-                class="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700">Start</button>
-              <button id="pauseTimerBtn"
-                class="px-4 py-2 rounded bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700">Pause</button>
-              <button id="resetTimerBtn"
-                class="px-4 py-2 rounded bg-red-500 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700">Reset</button>
+      /* Dark Mode specific button styles */
+      body.dark #startTimerBtn {
+        background-color: #34d399; /* Lighter Green for Dark Mode */
+        color: #1f2937; /* Dark text for contrast */
+      }
+      body.dark #startTimerBtn:hover {
+        background-color: #10b981;
+      }
+
+      body.dark #pauseTimerBtn {
+        background-color: #fcd34d; /* Yellow for Dark Mode */
+        color: #1f2937;
+      }
+      body.dark #pauseTimerBtn:hover {
+        background-color: #facc15;
+      }
+
+      body.dark #resetTimerBtn {
+        background-color: #f87171; /* Lighter Red for Dark Mode */
+        color: #1f2937;
+      }
+      body.dark #resetTimerBtn:hover {
+        background-color: #ef4444;
+      }
+      /* Music Player Styles */
+.music-player-panel {
+    background-color: #f7e0fc; /* Light Purple for Light Mode */
+    color: #5b21b6; /* Dark Purple Text */
+    border: 1px solid #d8b4fe; /* Purple border */
+    transition: all 0.4s ease;
+}
+
+body.dark .music-player-panel {
+    background-color: #372a42; /* Darker Purple for Dark Mode */
+    color: #d1c7e0; /* Lighter text for contrast */
+    border-color: #5c4b6b; /* Darker purple border */
+}
+
+.music-player-title {
+    color: #6d28d9; /* Deeper Purple */
+    transition: color 0.4s ease;
+}
+
+body.dark .music-player-title {
+    color: #d8b4fe; /* Lighter Purple */
+}
+
+.music-playlist-header {
+    color: #6d28d9; /* Deeper Purple */
+    transition: color 0.4s ease;
+}
+
+body.dark .music-playlist-header {
+    color: #d8b4fe; /* Lighter Purple */
+}
+
+#musicPlaylist li {
+    color: #6b21a8; /* Purple text for list items */
+    transition: color 0.4s ease;
+}
+
+body.dark #musicPlaylist li {
+    color: #e9d5ff; /* Lighter purple text for list items */
+}
+
+/* Specific button styles for the music player */
+.btn-purple {
+    background-color: #a78bfa; /* Medium Purple */
+    color: white;
+}
+.btn-purple:hover {
+    background-color: #8b5cf6; /* Darker Purple */
+}
+body.dark .btn-purple {
+    background-color: #7c3aed; /* Darker Purple for Dark Mode */
+    color: white;
+}
+body.dark .btn-purple:hover {
+    background-color: #6d28d9; /* Even Darker Purple */
+}
+
+.btn-green {
+    background-color: #34d399; /* Green */
+    color: white;
+}
+.btn-green:hover {
+    background-color: #10b981; /* Darker Green */
+}
+body.dark .btn-green {
+    background-color: #10b981; /* Darker Green for Dark Mode */
+    color: white;
+}
+body.dark .btn-green:hover {
+    background-color: #059669; /* Even Darker Green */
+}
+
+.btn-grey {
+    background-color: #e5e7eb; /* Light Grey */
+    color: #4b5563; /* Dark Grey Text */
+}
+.btn-grey:hover {
+    background-color: #d1d5db; /* Medium Grey */
+}
+body.dark .btn-grey {
+    background-color: #4b5563; /* Dark Grey for Dark Mode */
+    color: #f9fafb; /* Light Text */
+}
+body.dark .btn-grey:hover {
+    background-color: #374151; /* Even Darker Grey */
+}
+    </style>
+  </head>
+
+  <body class="relative text-gray-800 font-sans">
+    <button
+      id="toggleDark"
+      class="fixed top-4 right-4 z-50 bg-white/80 text-gray-800 border border-gray-300 px-4 py-2 rounded-full shadow hover:bg-gray-200 transition dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600"
+    >
+      🌙 Dark Mode
+    </button>
+
+    <div
+      class="max-w-6xl mx-auto mt-10 px-4 py-8 rounded-3xl main-content-wrapper"
+    >
+      <div class="flex justify-center mb-6">
+        <button
+          id="showMainTaskBtn"
+          class="px-6 py-2 rounded-l-full font-bold transition-colors shadow"
+        >
+          Today's Task
+        </button>
+        <button
+          id="showAllTasksBtn"
+          class="px-6 py-2 rounded-r-full font-bold transition-colors shadow"
+        >
+          All Tasks
+        </button>
+      </div>
+
+      <div class="book-container show-left flex-col lg:flex-row">
+        <div
+          class="book-page left-panel relative z-10 p-6 rounded-2xl shadow-lg"
+        >
+          <div class="relative z-10 space-y-4">
+            <h2 class="text-xl font-semibold">
+              📝 Today's Most Important Task
+            </h2>
+            <p>
+              Choose your most important task for today and break it down into
+              some cutie small steps! :3
+            </p>
+            <input
+              id="taskInput"
+              type="text"
+              class="w-full px-4 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+              placeholder="Task"
+            />
+            <div class="flex gap-2">
+              <button
+                onclick="showStepForm()"
+                class="px-4 py-2 rounded font-medium shadow btn-yellow"
+              >
+                Add Step
+              </button>
+              <button class="px-4 py-2 rounded font-medium shadow btn-pink">
+                Mark Done
+              </button>
             </div>
-          </div>
-           <div id="progressBarContainer" class="hidden mt-6">
-            <div class="relative pt-1">
-              <div class="overflow-hidden h-4 mb-4 text-xs flex rounded bg-pink-200 dark:bg-pink-900">
-                <div id="progressBarFill" style="width:0%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-pink-500 transition-all duration-500 ease-out"></div>
+
+            <div
+              id="pomodoroTimer"
+              class="hidden text-center mt-6 p-4 rounded-lg bg-blue-100 dark:bg-blue-900 shadow"
+            >
+              <h3
+                id="timerStatus"
+                class="text-lg font-semibold text-blue-800 dark:text-red-600 mb-2"
+              >
+                Focus Time!
+              </h3>
+              <div
+                class="text-5xl font-bold text-blue-700 dark:text-blue-100"
+                id="countdown"
+              >
+                25:00
               </div>
-              <p id="progressText" class="text-sm font-medium text-gray-700 dark:text-gray-300 text-center"></p>
+              <div class="flex justify-center gap-4 mt-4">
+                <button
+                  id="startTimerBtn"
+                  class="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+                >
+                  Start
+                </button>
+                <button
+                  id="pauseTimerBtn"
+                  class="px-4 py-2 rounded bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700"
+                >
+                  Pause
+                </button>
+                <button
+                  id="resetTimerBtn"
+                  class="px-4 py-2 rounded bg-red-500 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+            <div id="progressBarContainer" class="hidden mt-6">
+              <div class="relative pt-1">
+                <div
+                  class="overflow-hidden h-4 mb-4 text-xs flex rounded bg-pink-200 dark:bg-pink-900"
+                >
+                  <div
+                    id="progressBarFill"
+                    style="width: 0%"
+                    class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-pink-500 transition-all duration-500 ease-out"
+                  ></div>
+                </div>
+                <p
+                  id="progressText"
+                  class="text-sm font-medium text-gray-700 dark:text-gray-300 text-center"
+                ></p>
+              </div>
+            </div>
+            <div
+              id="pomodoroTimer"
+              class="hidden text-center mt-6 p-4 rounded-lg bg-blue-100 dark:bg-blue-900 shadow"
+            >
+              <h3
+                id="timerStatus"
+                class="text-lg font-semibold text-blue-800 dark:text-red-600 mb-2"
+              >
+                Focus Time!
+              </h3>
+              <div
+                class="text-5xl font-bold text-blue-700 dark:text-blue-100"
+                id="countdown"
+              >
+                25:00
+              </div>
+              <div class="flex justify-center gap-4 mt-4">
+                <button
+                  id="startTimerBtn"
+                  class="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+                >
+                  Start
+                </button>
+                <button
+                  id="pauseTimerBtn"
+                  class="px-4 py-2 rounded bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700"
+                >
+                  Pause
+                </button>
+                <button
+                  id="resetTimerBtn"
+                  class="px-4 py-2 rounded bg-red-500 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+            <div id="progressBarContainer" class="hidden mt-6">
+              <div class="relative pt-1">
+                <div
+                  class="overflow-hidden h-4 mb-4 text-xs flex rounded bg-pink-200 dark:bg-pink-900"
+                >
+                  <div
+                    id="progressBarFill"
+                    style="width: 0%"
+                    class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-pink-500 transition-all duration-500 ease-out"
+                  ></div>
+                </div>
+                <p
+                  id="progressText"
+                  class="text-sm font-medium text-gray-700 dark:text-gray-300 text-center"
+                ></p>
+              </div>
+            </div>
+
+            <div
+              id="musicPlayerContainer"
+              class="mt-6 p-4 rounded-lg shadow-md music-player-panel"
+            >
+              <h3 class="text-lg font-semibold mb-3 music-player-title">
+                🎧 Let's listen to something good while at it, no? UwU
+              </h3>
+              <div class="flex flex-col sm:flex-row gap-2 mb-4">
+                <input
+                  id="youtubeUrlInput"
+                  type="text"
+                  class="flex-1 px-3 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  placeholder="Paste YouTube video link here..."
+                />
+                <button
+                  id="addTuneBtn"
+                  class="px-4 py-2 rounded-xl font-medium shadow btn-purple"
+                >
+                  Add Song
+                </button>
+              </div>
+              <div
+                id="player"
+                class="w-full aspect-video rounded-lg overflow-hidden mb-4 bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-gray-500 dark:text-gray-400"
+              >
+                <p id="playerPlaceholder" class="text-sm">
+                  Add your song to start listening!
+                </p>
+              </div>
+              <div class="flex justify-center gap-3">
+                <button
+                  id="prevTuneBtn"
+                  class="px-4 py-2 rounded-full font-medium shadow btn-grey disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ⏮️ Previous
+                </button>
+                <button
+                  id="playPauseTuneBtn"
+                  class="px-6 py-2 rounded-full font-bold shadow btn-green"
+                >
+                  ▶️ Play
+                </button>
+                <button
+                  id="nextTuneBtn"
+                  class="px-4 py-2 rounded-full font-medium shadow btn-grey disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next ⏭️
+                </button>
+              </div>
+              <div class="mt-4">
+                <h4 class="font-medium mb-2 music-playlist-header">
+                  My Playlist:
+                </h4>
+                <ul id="musicPlaylist" class="space-y-1 text-sm list-inside">
+                  <p
+                    id="playlistPlaceholder"
+                    class="italic text-gray-600 dark:text-gray-400"
+                  >
+                    No tunes added yet.
+                  </p>
+                </ul>
+              </div>
+            </div>
+            <ul id="stepList" class="list-disc list-inside space-y-1"></ul>
+            <ul id="stepList" class="list-disc list-inside space-y-1"></ul>
+            <div id="stepForm" class="hidden flex gap-2">
+              <input
+                id="stepInput"
+                type="text"
+                class="flex-1 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                placeholder="Add a small step..."
+              />
+              <button
+                type="button"
+                onclick="submitStep()"
+                class="px-3 py-2 rounded transition btn-yellow"
+              >
+                ➕ Add
+              </button>
             </div>
           </div>
-          <ul id="stepList" class="list-disc list-inside space-y-1"></ul>
-          <div id="stepForm" class="hidden flex gap-2">
-            <input id="stepInput" type="text"
-              class="flex-1 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              placeholder="Add a small step..." />
-            <button type="button" onclick="submitStep()" class="px-3 py-2 rounded transition btn-yellow">
-              ➕ Add
+        </div>
+
+        <div class="book-page right-panel shadow-lg rounded-xl p-6">
+          <h1 class="text-2xl font-bold mb-4">
+            🌟 MVP: Let's finish those tasks together!
+          </h1>
+          <div class="flex gap-2 mb-6">
+            <input
+              id="taskInput2"
+              type="text"
+              class="flex-1 px-4 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+              placeholder="Gimme them tasks!"
+            />
+            <button
+              onclick="addTask()"
+              class="px-4 py-2 rounded-xl transition bg-pink-500 text-white hover:bg-pink-600 dark:bg-pink-600 dark:hover:bg-pink-700"
+            >
+              Add
             </button>
           </div>
-        </div>
-      </div>
-
-      <div class="book-page right-panel shadow-lg rounded-xl p-6">
-        <h1 class="text-2xl font-bold mb-4">
-          🌟 MVP: Let's finish those tasks together!
-        </h1>
-        <div class="flex gap-2 mb-6">
-          <input id="taskInput2" type="text"
-            class="flex-1 px-4 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
-            placeholder="Gimme them tasks!" />
-          <button onclick="addTask()"
-            class="px-4 py-2 rounded-xl transition bg-pink-500 text-white hover:bg-pink-600 dark:bg-pink-600 dark:hover:bg-pink-700">
-            Add
-          </button>
-        </div>
-        <div id="taskPage" class="space-y-4">
-          <div id="taskList" class="space-y-4">
-            <p class="italic">No task selected yet.</p>
+          <div id="taskPage" class="space-y-4">
+            <div id="taskList" class="space-y-4">
+              <p class="italic">No task selected yet.</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <script src="script.js"></script>
-</body>
-
+    <script src="script.js"></script>
+  </body>
 </html>
