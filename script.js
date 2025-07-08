@@ -1,997 +1,931 @@
+const API_BASE_URL = "http://localhost:3000/api"; // Base URL for API requests
+
 // 1. Load the IFrame Player API code asynchronously.
-const tag = document.createElement('script');
+const tag = document.createElement("script");
 // CORRECTED YOUTUBE API URL:
-tag.src = "https://www.youtube.com/iframe_api";
-const firstScriptTag = document.getElementsByTagName('script')[0];
+tag.src = "https://www.youtube.com/iframe_api"; // This is the official YouTube IFrame Player API URL
+const firstScriptTag = document.getElementsByTagName("script")[0];
 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+// Global player variable
+let player;
+let musicPlaylist = [];
+let currentTuneIndex = -1;
 
 // 2. This function creates an <iframe> (and YouTube player)
 //    after the API code downloads.
 function onYouTubeIframeAPIReady() {
-    player = new YT.Player('player', { // 'player' is the ID of the div where the player will be inserted
-        height: '100%', // Use percentages for responsive sizing
-        width: '100%',
-        videoId: musicPlaylist.length > 0 ? musicPlaylist[currentTuneIndex].videoId : '', // Load first video if playlist exists
-        playerVars: {
-            'playsinline': 1,
-            'autoplay': 0, // Don't autoplay on load
-            'controls': 1,
-            'showinfo': 0,
-            'rel': 0, // Prevent related videos
-            'modestbranding': 1 // No YouTube logo
-        },
-        events: {
-            'onReady': onPlayerReady,
-            'onStateChange': onPlayerStateChange
-        }
-    });
+  player = new YT.Player("player", {
+    // 'player' is the ID of the div where the player will be inserted
+    height: "100%", // Use percentages for responsive sizing
+    width: "100%",
+    videoId:
+      musicPlaylist.length > 0 ? musicPlaylist[currentTuneIndex].videoId : "", // Load first video if playlist exists
+    playerVars: {
+      playsinline: 1,
+      autoplay: 0, // Don't autoplay on load
+      controls: 1,
+      showinfo: 0,
+      rel: 0, // Prevent related videos
+      modestbranding: 1, // No YouTube logo
+    },
+    events: {
+      onReady: onPlayerReady,
+      onStateChange: onPlayerStateChange,
+    },
+  });
 }
 
 // 3. The API will call this function when the video player is ready.
 function onPlayerReady(event) {
-    playerReady = true; // Set flag
-    // If there are tunes, ensure prev/next buttons are correctly enabled/disabled on load
-    updatePlayerControls();
-    // Clear placeholder text once player is ready (even if no video is loaded yet)
-    if (playerPlaceholder) {
-        playerPlaceholder.style.display = 'none';
-    }
-    // Optionally auto-load and play the first tune if playlist exists and player is ready
-    if (musicPlaylist.length > 0 && musicPlaylist[currentTuneIndex]) {
-        player.loadVideoById(musicPlaylist[currentTuneIndex].videoId);
-    }
+  // Player is ready, you can now interact with it
+  console.log("YouTube player is ready.");
+  if (musicPlaylist.length > 0 && currentTuneIndex !== -1) {
+    // Only load and play if a tune is selected
+    event.target.loadVideoById(musicPlaylist[currentTuneIndex].videoId);
+  }
 }
 
-// 4. The API calls this function when the player's state changes.
+// 4. The API calls this function whenever the player's state changes.
 function onPlayerStateChange(event) {
-    // When video ends (YT.PlayerState.ENDED = 0)
-    if (event.data === YT.PlayerState.ENDED) {
-        nextTune(); // Play the next tune automatically
-    }
-    // Update play/pause button text based on player state
-    if (event.data === YT.PlayerState.PLAYING) {
-        playPauseTuneBtn.textContent = '⏸️ Pause';
-    } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
-        playPauseTuneBtn.textContent = '▶️ Play';
-    }
-    updatePlayerControls(); // Also update controls on state change (e.g. disable play if paused on last song)
+  // event.data contains the new state
+  // YT.PlayerState.ENDED (0), YT.PlayerState.PLAYING (1), YT.PlayerState.PAUSED (2), etc.
+  if (event.data === YT.PlayerState.ENDED) {
+    nextTune(); // Play next tune when current one ends
+  }
 }
 
-// --- DOM Element References ---
-const taskInput = document.getElementById("taskInput"); // For main task
-const taskPage = document.getElementById("taskPage"); // Container for all tasks list
-const mainTaskInput = document.getElementById("taskInput"); // Same as taskInput, kept for clarity in context
-const stepList = document.getElementById("stepList");
-const stepForm = document.getElementById("stepForm");
-const stepInput = document.getElementById("stepInput");
-const addStepBtn = document.querySelector(".btn-yellow"); // "Add Step" button for main task
-const markDoneBtn = document.querySelector(".btn-pink"); // "Mark Done" button for main task
+// Helper to extract YouTube video ID
+// Helper function to extract YouTube video ID from a URL
+function getYouTubeVideoId(url) {
+  let videoId = "";
+  const patterns = [
+    // Standard watch URL: https://www.youtube.com/watch?v=VIDEO_ID
+    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/,
+    // Shortened youtu.be URL: https://youtu.be/VIDEO_ID
+    /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]{11})/,
+    // Embed URL: https://www.youtube.com/embed/VIDEO_ID
+    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+    // Mobile URL: https://m.youtube.com/watch?v=VIDEO_ID
+    /(?:https?:\/\/)?m\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/,
+    // Short URL after share: https://youtube.com/shorts/VIDEO_ID
+    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+  ];
 
-const body = document.body;
-const toggleBtn = document.getElementById("toggleDark");
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      videoId = match[1];
+      break; // Found a match, no need to check other patterns
+    }
+  }
+  return videoId;
+}
 
-const bookContainer = document.querySelector(".book-container");
+// --- DOM Elements ---
+const toggleDarkBtn = document.getElementById("toggleDark");
 const showMainTaskBtn = document.getElementById("showMainTaskBtn");
 const showAllTasksBtn = document.getElementById("showAllTasksBtn");
-
-// Pomodoro Timer Elements
+const bookContainer = document.querySelector(".book-container");
+const taskInput = document.getElementById("taskInput"); // For main task
+const stepInput = document.getElementById("stepInput");
+const stepList = document.getElementById("stepList");
+const stepForm = document.getElementById("stepForm");
+const taskInput2 = document.getElementById("taskInput2"); // For adding tasks on All Tasks page
+const taskList = document.getElementById("taskList");
 const pomodoroTimer = document.getElementById("pomodoroTimer");
-const timerStatus = document.getElementById("timerStatus");
-const countdown = document.getElementById("countdown");
+const countdownDisplay = document.getElementById("countdown");
+const timerStatusDisplay = document.getElementById("timerStatus");
 const startTimerBtn = document.getElementById("startTimerBtn");
 const pauseTimerBtn = document.getElementById("pauseTimerBtn");
 const resetTimerBtn = document.getElementById("resetTimerBtn");
-
-// Progress Bar Elements (assuming you've added the HTML for these)
-const progressBarContainer = document.getElementById('progressBarContainer');
-const progressBarFill = document.getElementById('progressBarFill');
-const progressText = document.getElementById('progressText');
-
-// --- NEW: Music Player DOM Element References ---
-const musicPlayerContainer = document.getElementById("musicPlayerContainer");
+const progressBarContainer = document.getElementById("progressBarContainer");
+const progressBarFill = document.getElementById("progressBarFill");
+const progressText = document.getElementById("progressText");
 const youtubeUrlInput = document.getElementById("youtubeUrlInput");
 const addTuneBtn = document.getElementById("addTuneBtn");
-const playerDiv = document.getElementById("player"); // This is the div where the iframe will be created
-const playerPlaceholder = document.getElementById("playerPlaceholder"); // The text placeholder inside the player div
-const prevTuneBtn = document.getElementById("prevTuneBtn");
 const playPauseTuneBtn = document.getElementById("playPauseTuneBtn");
 const nextTuneBtn = document.getElementById("nextTuneBtn");
+const prevTuneBtn = document.getElementById("prevTuneBtn");
 const musicPlaylistUl = document.getElementById("musicPlaylist");
+const playerPlaceholder = document.getElementById("playerPlaceholder");
 const playlistPlaceholder = document.getElementById("playlistPlaceholder");
-// --- END NEW Music Player References ---
 
+addTuneBtn.addEventListener("click", addTune); // Connects the button to the function
 
-// --- Task Data and Persistence ---
-let tasks = [];
-let mainTask = null; // Variable to hold the reference to today's most important task
+// Also ensure these listeners are present for music controls:
+playPauseTuneBtn.addEventListener("click", togglePlayPauseTune);
+nextTuneBtn.addEventListener("click", nextTune);
+prevTuneBtn.addEventListener("click", prevTune);
 
-// NEW: Music Playlist Data and Persistence
-let musicPlaylist = [];
-let currentTuneIndex = 0; // To keep track of the currently playing song
-let player; // This will hold the YouTube player object
-let playerReady = false; // Flag to ensure player is ready before commands
+let currentMainTask = null; // Stores the currently selected main task object
+let pomodoroInterval;
+let timeLeft = 25 * 60; // 25 minutes in seconds
+let isPaused = true;
+let isFocusTime = true;
 
-function saveMusicPlaylist() {
-    localStorage.setItem("musicPlaylist", JSON.stringify(musicPlaylist));
-}
-// END NEW Music Playlist Data
-
-// Load tasks from localStorage on script initialization
-const storedTasks = localStorage.getItem("tasks");
-if (storedTasks) {
-    tasks = JSON.parse(storedTasks).map((task) => {
-        // Ensure 'done' and 'isMainTask' properties exist
-        task.done = task.done || false;
-        task.isMainTask = task.isMainTask || false;
-        // IMPORTANT: Ensure subtasks are also objects, not just strings
-        // This handles cases where old data might have subtasks as strings
-        if (task.subtasks && Array.isArray(task.subtasks)) {
-            task.subtasks = task.subtasks.map(sub => {
-                if (typeof sub === 'string') {
-                    return { text: sub, done: false };
-                }
-                return sub; // Already an object
-            });
-        } else {
-            task.subtasks = []; // Initialize if null/undefined
-        }
-        return task;
-    });
-    // Find the main task if it exists (and is not done)
-    mainTask = tasks.find((task) => task.isMainTask && !task.done);
+// --- Theme Toggling ---
+function applyTheme(theme) {
+  document.body.className = theme;
+  toggleDarkBtn.textContent =
+    theme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
+  localStorage.setItem("theme", theme); // Save theme preference
 }
 
-// NEW: Load music playlist from localStorage
-const storedMusicPlaylist = localStorage.getItem("musicPlaylist");
-if (storedMusicPlaylist) {
-    musicPlaylist = JSON.parse(storedMusicPlaylist);
-    // Ensure currentTuneIndex is valid
-    if (musicPlaylist.length > 0 && currentTuneIndex >= musicPlaylist.length) {
-        currentTuneIndex = 0;
+toggleDarkBtn.addEventListener("click", () => {
+  const currentTheme = document.body.className;
+  applyTheme(currentTheme === "dark" ? "light" : "dark");
+});
+
+// --- Page Turning (UI only, no data logic here) ---
+function showPage(page) {
+  if (page === "mainTask") {
+    bookContainer.classList.remove("show-right");
+    bookContainer.classList.add("show-left");
+    showMainTaskBtn.classList.add(
+      "bg-pink-300",
+      "dark:bg-pink-700",
+      "text-pink-800",
+      "dark:text-pink-100"
+    );
+    showMainTaskBtn.classList.remove(
+      "bg-white",
+      "dark:bg-gray-700",
+      "text-gray-600",
+      "dark:text-gray-300"
+    );
+    showAllTasksBtn.classList.remove(
+      "bg-pink-300",
+      "dark:bg-pink-700",
+      "text-pink-800",
+      "dark:text-pink-100"
+    );
+    showAllTasksBtn.classList.add(
+      "bg-white",
+      "dark:bg-gray-700",
+      "text-gray-600",
+      "dark:text-gray-300"
+    );
+  } else if (page === "allTasks") {
+    bookContainer.classList.remove("show-left");
+    bookContainer.classList.add("show-right");
+    showAllTasksBtn.classList.add(
+      "bg-pink-300",
+      "dark:bg-pink-700",
+      "text-pink-800",
+      "dark:text-pink-100"
+    );
+    showAllTasksBtn.classList.remove(
+      "bg-white",
+      "dark:bg-gray-700",
+      "text-gray-600",
+      "dark:text-gray-300"
+    );
+    showMainTaskBtn.classList.remove(
+      "bg-pink-300",
+      "dark:bg-pink-700",
+      "text-pink-800",
+      "dark:text-pink-100"
+    );
+    showMainTaskBtn.classList.add(
+      "bg-white",
+      "dark:bg-gray-700",
+      "text-gray-600",
+      "dark:text-gray-300"
+    );
+  }
+}
+
+showMainTaskBtn.addEventListener("click", () => showPage("mainTask"));
+showAllTasksBtn.addEventListener("click", () => showPage("allTasks"));
+
+// --- Task Management Functions (Integrated with API) ---
+
+// Fetches all tasks from the backend
+async function fetchTasks() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/tasks`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-}
-// END NEW Music Playlist Loading
-
-
-function saveTasks() {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-}
-
-// --- Pomodoro Timer Variables ---
-const FOCUS_TIME = 25 * 60; // 25 minutes in seconds
-const BREAK_TIME = 5 * 60; // 5 minutes in seconds
-let timer = FOCUS_TIME;
-let isRunning = false;
-let intervalId = null;
-let isFocusSession = true; // true for focus, false for break
-
-
-// --- Tips Array ---
-const tips = [
-    "Break down large tasks into smaller, manageable steps.",
-    "If you can't do it today, it's okay, don't whiplash yourself!",
-    "Use the Pomodoro Technique: work for 25 mins, then a 5-min break.",
-    "Treat yourself while doing the task to associate it with positive feelings.",
-    "Set specific deadlines for each task to create urgency.",
-    "Review your tasks daily to stay on track.",
-    "Set an exact time for only THIS task, not just 'today'.",
-    "Celebrate small victories to keep motivated!",
-    "Make your workspace clutter-free.",
-    "Learn to say 'no' to non-essential requests.",
-    "Don't listen to music that makes you restless, or makes you think only about it.",
-    "Try doing just a tiny peace of the task, it can help you get started. and then you will be more okay with continuing.",
-    "Visualize the end result to stay motivated.",
-    "Plan how you'll do the task, try to gaslight yourself into falling in love with the process!"
-];
-
-// --- Utility Functions ---
-function findTaskById(taskId) {
-    return tasks.find((t) => t.id === taskId);
+    const tasks = await response.json();
+    return tasks;
+  } catch (error) {
+    console.error("Error fetching tasks:", error);
+    return [];
+  }
 }
 
-function displayRandomTip(tipContainerId) {
-    const tipContainer = document.getElementById(tipContainerId);
-    if (!tipContainer) return;
+// Renders the main task on the left panel
+async function renderMainTask() {
+  const tasks = await fetchTasks();
+  currentMainTask = tasks.find((task) => task.isMainTask) || null;
 
-    const randomTip = tips[Math.floor(Math.random() * tips.length)];
-    tipContainer.innerHTML = `<strong class="font-bold">💡 Tip:</strong> ${randomTip} <span id="newTipBtn" class="ml-2 text-blue-600 dark:text-blue-400 cursor-pointer hover:underline">Get another tip!</span>`;
-
-    // Re-assign event listener for the new tip button each time content is updated
-    document.getElementById("newTipBtn").onclick = () =>
-        displayRandomTip(tipContainerId);
-}
-
-
-// --- Right Panel (All Tasks) Functions ---
-function addTask() {
-    const taskInput2 = document.getElementById("taskInput2");
-    const title = taskInput2.value.trim();
-    if (!title) return;
-
-    const task = {
-        id: Date.now(),
-        title: title,
-        // When adding from right panel, subtasks are still just strings here
-        // If you later want progress on these, you'd convert them when opening for editing
-        subtasks: [],
-        done: false,
-        isMainTask: false, // Default to false for tasks added via the right panel
-    };
-
-    tasks.unshift(task); // Add to the beginning of the array
-    saveTasks();
-    taskInput2.value = "";
-
-    renderTasksOnRightPanel();
-}
-
-function renderTasksOnRightPanel() {
-    taskPage.innerHTML = ""; // Clear existing content
-
-    // Filter out the active main task from the right panel display.
-    // An active main task should only be on the left.
-    // Completed main tasks (task.isMainTask && task.done) should show here.
-    // Regular tasks (not mainTask) should always show here if not explicitly removed.
-    const tasksToShowInRightPanel = tasks.filter(task => {
-        return !(task.isMainTask && !task.done); // Exclude main task ONLY if it's active (not done)
-    });
-
-    if (tasksToShowInRightPanel.length === 0) {
-        const noTaskMessage = document.createElement("p");
-        noTaskMessage.classList.add("italic");
-        noTaskMessage.textContent = "No tasks yet! Add one above or select a main task.";
-        taskPage.appendChild(noTaskMessage);
-        return;
-    }
-
-    tasksToShowInRightPanel.forEach((task) => {
-        const newTaskDiv = document.createElement("div");
-        newTaskDiv.classList.add(
-            "task-item",
-            "p-3",
-            "rounded-lg",
-            "shadow-sm",
-            "flex",
-            "items-center",
-            "justify-between"
-        );
-
-        const titleSpan = document.createElement("span");
-        titleSpan.textContent = task.title;
-        titleSpan.classList.add("cursor-pointer", "hover:underline");
-        titleSpan.onclick = () => openTaskPage(task.id);
-
-        // Visual indicator for completed main tasks in the all tasks list
-        if (task.done && task.isMainTask) {
-            titleSpan.classList.add("line-through", "text-gray-500", "dark:text-gray-400");
-        }
-
-        const removeBtn = document.createElement("button");
-        removeBtn.classList.add(
-            "px-2",
-            "py-1",
-            "rounded",
-            "hover:bg-red-400",
-            "btn-red"
-        );
-        removeBtn.textContent = "Done"; // This button still *removes* the task
-        removeBtn.onclick = () => {
-            const taskIndex = tasks.findIndex((t) => t.id === task.id);
-            if (taskIndex > -1) {
-                tasks.splice(taskIndex, 1); // Permanently remove from the array
-                saveTasks();
-                renderTasksOnRightPanel(); // Re-render the right panel
-                renderMainTask(); // Re-render main task panel in case it was a main task that was removed
-            }
-        };
-
-        newTaskDiv.appendChild(titleSpan);
-        newTaskDiv.appendChild(removeBtn);
-        taskPage.appendChild(newTaskDiv);
-    });
-}
-
-function openTaskPage(taskId) {
-    const task = findTaskById(taskId);
-    if (!task) return;
-
-    taskPage.innerHTML = ""; // Clear right panel to show task details
-
-    const backButton = document.createElement("button");
-    backButton.classList.add(
-        "mb-4",
-        "text-sm",
-        "text-blue-500",
-        "hover:underline"
-    );
-    backButton.textContent = "← Back to All Tasks";
-    backButton.onclick = renderTasksOnRightPanel;
-
-    const title = document.createElement("h2");
-    title.classList.add("text-xl", "font-semibold", "mb-2");
-    title.textContent = task.title;
-
-    const tipDiv = document.createElement("div");
-    tipDiv.id = "currentTaskTip";
-    tipDiv.classList.add(
-        "bg-yellow-100",
-        "dark:bg-yellow-800",
-        "p-3",
-        "rounded-lg",
-        "mb-4",
-        "text-sm",
-        "text-yellow-800",
-        "dark:text-yellow-200"
-    );
-
-    const subtaskForm = document.createElement("form");
-    subtaskForm.classList.add("flex", "gap-2", "mb-4");
-    subtaskForm.onsubmit = (e) => {
-        e.preventDefault();
-        const input = subtaskForm.querySelector("input");
-        const text = input.value.trim();
-        if (!text) return;
-
-        // *** IMPORTANT: Ensure subtasks added from this panel are also objects ***
-        task.subtasks.push({ text: text, done: false });
-        // *********************************************************************
-
-        saveTasks();
-        input.value = "";
-        renderSubtaskList(task);
-    };
-
-    const subtaskInput = document.createElement("input");
-    subtaskInput.type = "text";
-    subtaskInput.placeholder = "Add a breakdown step...";
-    subtaskInput.classList.add("flex-1", "px-2", "py-1", "rounded", "border");
-
-    const addButton = document.createElement("button");
-    addButton.type = "submit";
-    addButton.textContent = "Add";
-    addButton.classList.add(
-        "px-3",
-        "py-1",
-        "bg-green-500",
-        "text-white",
-        "rounded",
-        "hover:bg-green-600"
-    );
-
-    subtaskForm.appendChild(subtaskInput);
-    subtaskForm.appendChild(addButton);
-
-    const subtaskList = document.createElement("ul");
-    subtaskList.id = "subtaskList";
-    subtaskList.classList.add("list-disc", "pl-5", "space-y-1");
-
-    taskPage.appendChild(backButton);
-    taskPage.appendChild(title);
-    taskPage.appendChild(tipDiv);
-    taskPage.appendChild(subtaskForm);
-    taskPage.appendChild(subtaskList);
-
-    renderSubtaskList(task);
-    displayRandomTip("currentTaskTip");
-}
-
-function renderSubtaskList(task) {
-    const list = document.getElementById("subtaskList");
-    if (!list) return;
-    list.innerHTML = "";
-    task.subtasks.forEach((sub, index) => { // Added index for potential future use
+  if (currentMainTask) {
+    taskInput.value = currentMainTask.title;
+    stepList.innerHTML = ""; // Clear existing steps
+    if (currentMainTask.subtasks && currentMainTask.subtasks.length > 0) {
+      currentMainTask.subtasks.forEach((step) => {
         const li = document.createElement("li");
-        // Display text content from the subtask object
-        li.textContent = sub.text; // Access .text property
-        // You could add a checkbox here too if you want to mark subtasks done
-        // in the "All Tasks" view. For now, it's just the text.
-        list.appendChild(li);
-    });
-}
+        li.className =
+          "flex items-center justify-between gap-2 bg-white dark:bg-gray-700 px-3 py-2 rounded shadow";
 
-// --- Left Panel (Main Task) Functions ---
-function renderMainTask() {
-    if (mainTask && !mainTask.done) {
-        taskInput.value = mainTask.title;
-        taskInput.disabled = true;
-        addStepBtn.style.display = "block";
-        markDoneBtn.style.display = "block";
-        stepForm.classList.remove("hidden"); // Ensure step form is visible when main task is active
-        renderMainTaskSteps();
-        togglePomodoroDisplay(true); // Show the timer when a main task is active
-    } else {
-        taskInput.value = "";
-        taskInput.disabled = false;
-        stepList.innerHTML = "";
-        stepForm.classList.add("hidden");
-        addStepBtn.style.display = "none";
-        markDoneBtn.style.display = "none";
-        togglePomodoroDisplay(false); // Hide the timer when no main task or it's done
-        if (progressBarContainer) { // Hide progress bar if no main task
-            progressBarContainer.classList.add('hidden');
+        const stepText = document.createElement("span");
+        stepText.textContent = step.text;
+        stepText.className = "flex-1";
+        if (step.completed) {
+          stepText.classList.add(
+            "line-through",
+            "text-gray-500",
+            "dark:text-gray-400"
+          );
         }
-    }
+
+        const btnDone = document.createElement("button");
+        btnDone.textContent = step.completed ? "🔁 Undo" : "✅ Done";
+        btnDone.className = "btn-yellow text-sm px-2 py-1 rounded";
+        btnDone.addEventListener("click", () =>
+          toggleStepComplete(currentMainTask.id, step.id)
+        );
+
+        async function deleteStep(taskId, stepId) {
+  if (!currentMainTask || currentMainTask.id !== taskId) return;
+  currentMainTask.subtasks = currentMainTask.subtasks.filter(step => step.id !== stepId);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subtasks: currentMainTask.subtasks })
+    });
+    if (!response.ok) throw new Error('Error deleting step');
+    await renderMainTask(); // Refresh steps
+    updateMainTaskProgressBar();
+  } catch (error) {
+    console.error("Failed to delete step:", error);
+  }
 }
 
-function addMainTask() {
-    const title = mainTaskInput.value.trim();
-    if (!title) return;
+        const btnDelete = document.createElement("button");
+        btnDelete.textContent = "🗑️ Delete";
+        btnDelete.className = "btn-red text-sm px-2 py-1 rounded";
+        btnDelete.addEventListener("click", () =>
+          deleteStep(currentMainTask.id, step.id)
+        );
 
-    if (mainTask && !mainTask.done) {
-        alert("Please mark the current main task as done before adding a new one.");
-        return;
+        li.appendChild(stepText);
+        li.appendChild(btnDone);
+        li.appendChild(btnDelete);
+        stepList.appendChild(li);
+      });
+      progressBarContainer.classList.remove("hidden");
+    } else {
+      stepList.innerHTML =
+        '<p class="italic text-gray-600 dark:text-gray-400">No steps added for this task.</p>';
+      progressBarContainer.classList.add("hidden");
     }
-
-    // If there's an old main task that's done, set its `isMainTask` to false
-    if (mainTask && mainTask.done) {
-        mainTask.isMainTask = false;
-    }
-
-    mainTask = {
-        id: Date.now(),
-        title: title,
-        subtasks: [], // Initialize subtasks as an empty array of objects
-        done: false,
-        isMainTask: true,
-    };
-    tasks.unshift(mainTask); // Add to the beginning of the tasks array
-    saveTasks();
-    renderMainTask(); // Update left panel
-    renderTasksOnRightPanel(); // Update right panel (should hide active main task)
+    pomodoroTimer.classList.remove("hidden"); // Show timer for main task
+    updateMainTaskProgressBar(); // Update progress bar
+  } else {
+    taskInput.value = "";
+    stepList.innerHTML =
+      '<p class="italic text-gray-600 dark:text-gray-400">No main task selected. Add a new task!</p>';
+    pomodoroTimer.classList.add("hidden"); // Hide timer if no main task
+    progressBarContainer.classList.add("hidden");
+  }
 }
 
-// --- Updated renderMainTaskSteps for Progress Tracking ---
-function renderMainTaskSteps() {
-    stepList.innerHTML = "";
-    if (mainTask && mainTask.subtasks.length > 0) {
-        mainTask.subtasks.forEach((step, index) => { // 'step' is now an object, and we need 'index'
-            const li = document.createElement("li");
-            li.classList.add("flex", "items-center", "justify-between", "py-1");
+// Renders all tasks on the right panel
+async function renderTasksOnRightPanel() {
+  const tasks = await fetchTasks();
+  taskList.innerHTML = ""; // Clear existing tasks
 
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.classList.add("form-checkbox", "h-4", "w-4", "text-pink-600", "rounded", "mr-2");
-            checkbox.checked = step.done; // Set checked status based on step.done
-            checkbox.onchange = () => toggleSubtaskDone(index); // Call a new function on change
+  if (tasks.length === 0) {
+    taskList.innerHTML =
+      '<p class="italic text-gray-600 dark:text-gray-400">No tasks added yet.</p>';
+    return;
+  }
 
-            const span = document.createElement("span");
-            span.textContent = step.text;
-            span.classList.add("flex-1", "mr-2"); // Initial classes for span
+  tasks.forEach((task) => {
+    const taskElement = document.createElement("div");
+    taskElement.className =
+      "task-item p-4 rounded-xl shadow-sm flex items-center justify-between";
+    taskElement.innerHTML = `
+            <span class="${
+              task.completed ? "line-through text-gray-500" : ""
+            }">${task.title}</span>
+            <div class="flex items-center gap-2">
+                <input type="checkbox" data-id="${
+                  task.id
+                }" class="form-checkbox h-5 w-5 text-pink-600" ${
+      task.completed ? "checked" : ""
+    }>
+                <button data-id="${
+                  task.id
+                }" class="btn-yellow px-3 py-1 rounded-md text-sm">Select</button>
+                <button data-id="${
+                  task.id
+                }" class="btn-red px-3 py-1 rounded-md text-sm">Delete</button>
+            </div>
+        `;
+    taskList.appendChild(taskElement);
 
-            // Apply line-through and adjust text color based on step.done and theme
-            if (step.done) {
-                span.classList.add("line-through");
-                body.classList.contains("dark") ? span.classList.add("text-gray-400") : span.classList.add("text-gray-500");
-            } else {
-                span.classList.remove("line-through");
-                // Ensure text color is reset to default for active tasks
-                body.classList.contains("dark") ? span.classList.add("text-white") : span.classList.add("text-gray-800");
-            }
-
-            const deleteBtn = document.createElement("button");
-            deleteBtn.innerHTML = '🗑️'; // Trash can emoji
-            deleteBtn.classList.add("ml-2", "text-red-500", "hover:text-red-700", "px-1", "py-0.5", "rounded", "text-sm");
-            deleteBtn.onclick = () => deleteSubtask(index); // Call a new function to delete
-
-            li.appendChild(checkbox);
-            li.appendChild(span);
-            li.appendChild(deleteBtn);
-            stepList.appendChild(li);
-        });
-    }
-    updateMainTaskProgressBar(); // Call this new function after rendering steps
+    // Add event listeners for new elements
+    taskElement
+      .querySelector('input[type="checkbox"]')
+      .addEventListener("change", (e) =>
+        toggleTaskComplete(task.id, e.target.checked)
+      );
+    taskElement
+      .querySelector(".btn-yellow")
+      .addEventListener("click", () => selectMainTask(task.id));
+    taskElement
+      .querySelector(".btn-red")
+      .addEventListener("click", () => deleteTask(task.id));
+  });
 }
 
+// Add a new task (from right panel)
+async function addTask() {
+  const title = taskInput2.value.trim();
+  if (title) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title,
+          completed: false,
+          isMainTask: false,
+          subtasks: [],
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const newTask = await response.json();
+      console.log("Task added:", newTask);
+      taskInput2.value = ""; // Clear input
+      await renderTasksOnRightPanel(); // Re-render the list
+    } catch (error) {
+      console.error("Error adding task:", error);
+    }
+  }
+}
+
+// Select a task as the main task (from right panel)
+async function selectMainTask(taskId) {
+  try {
+    // First, deselect any existing main task
+    const tasks = await fetchTasks();
+    const oldMainTask = tasks.find((task) => task.isMainTask);
+    if (oldMainTask && oldMainTask.id !== taskId) {
+      await fetch(`${API_BASE_URL}/tasks/${oldMainTask.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isMainTask: false }),
+      });
+    }
+    // Then, set the new main task
+    const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isMainTask: true }),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    await renderMainTask(); // Re-render main task on left panel
+    await renderTasksOnRightPanel(); // Re-render all tasks on right panel
+    showPage("mainTask"); // Switch to main task view
+  } catch (error) {
+    console.error("Error selecting main task:", error);
+  }
+}
+
+// Delete a task
+async function deleteTask(taskId) {
+  if (confirm("Are you sure you want to delete this task?")) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      console.log("Task deleted successfully");
+      if (currentMainTask && currentMainTask.id === taskId) {
+        currentMainTask = null; // Clear main task if deleted
+      }
+      await renderMainTask(); // Update main task view
+      await renderTasksOnRightPanel(); // Update all tasks view
+    } catch (error) {
+      console.error("Error deleting task:", error);
+    }
+  }
+}
+
+// Toggle task completion (from right panel)
+async function toggleTaskComplete(taskId, completed) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ completed: completed }),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    // No need to re-render all, just update main task if it was affected
+    if (currentMainTask && currentMainTask.id === taskId) {
+      currentMainTask.completed = completed; // Update local state
+      await renderMainTask(); // Re-render main task to reflect strike-through
+    }
+    await renderTasksOnRightPanel(); // Re-render to update UI immediately
+  } catch (error) {
+    console.error("Error toggling task completion:", error);
+  }
+}
+
+// Show/hide step form for main task
 function showStepForm() {
-    if (!mainTask || mainTask.done) {
-        alert("Please add and set your main task first!");
-        return;
-    }
+  if (currentMainTask) {
     stepForm.classList.remove("hidden");
-    stepInput.focus();
+  } else {
+    alert("Please select or add a main task first!");
+  }
 }
 
-function submitStep() {
-    if (!mainTask) return;
-
-    const value = stepInput.value.trim();
-    if (!value) return;
-
-    // *** CRUCIAL CHANGE: Pushing an object for subtasks ***
-    mainTask.subtasks.push({ text: value, done: false });
-    // *****************************************************
-
-    saveTasks();
-    renderMainTaskSteps(); // This will also trigger updateMainTaskProgressBar()
-
-    stepInput.value = "";
-    stepInput.focus();
-}
-
-function markMainTaskDone() {
-    if (!mainTask) {
-        alert("No main task to mark as done!");
-        return;
+const markDoneBtn = document.getElementById("markDoneBtn");
+if (markDoneBtn) {
+  markDoneBtn.addEventListener("click", async () => {
+    if (!currentMainTask) return;
+    const allCompleted = currentMainTask.subtasks.map((step) => ({
+      ...step,
+      completed: true,
+    }));
+    try {
+      await fetch(`${API_BASE_URL}/tasks/${currentMainTask.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subtasks: allCompleted }),
+      });
+      currentMainTask.subtasks = allCompleted;
+      await renderMainTask();
+      updateMainTaskProgressBar();
+    } catch (error) {
+      console.error("Failed to mark all steps done:", error);
     }
-    mainTask.done = true;
-    saveTasks();
-    mainTask = null; // Clear main task reference as it's done
-    renderMainTask(); // Re-render the left panel to clear the done task
-    renderTasksOnRightPanel(); // Update the right panel
-    resetTimer(); // Reset the timer when the main task is done
+  });
 }
 
-
-// --- NEW Subtask Management Functions for Main Task ---
-function toggleSubtaskDone(index) {
-    if (mainTask && mainTask.subtasks[index]) {
-        mainTask.subtasks[index].done = !mainTask.subtasks[index].done;
-        saveTasks();
-        renderMainTaskSteps(); // Re-render to update visual state (line-through, checkbox)
-        checkAndMarkMainTaskDoneIfAllSubtasksAreDone(); // Check if all subtasks are done
+// Add a step to the main task
+async function submitStep() {
+  if (!currentMainTask) {
+    alert("Please select a main task first!");
+    return;
+  }
+  const stepText = stepInput.value.trim();
+  if (stepText) {
+    const newStep = { id: Date.now(), text: stepText, completed: false }; // Simple ID for steps
+    currentMainTask.subtasks.push(newStep);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/tasks/${currentMainTask.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subtasks: currentMainTask.subtasks }),
+        }
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      stepInput.value = ""; // Clear input
+      await renderMainTask(); // Re-render main task to show new step
+      updateMainTaskProgressBar(); // Update progress bar
+    } catch (error) {
+      console.error("Error adding step:", error);
     }
+  }
 }
 
-function deleteSubtask(index) {
-    if (mainTask && mainTask.subtasks[index]) {
-        mainTask.subtasks.splice(index, 1);
-        saveTasks();
-        renderMainTaskSteps(); // Re-render list and update progress bar
+// Toggle step completion for the main task
+async function toggleStepComplete(taskId, stepId) {
+  if (!currentMainTask || currentMainTask.id !== taskId) {
+    console.error("Main task not found or mismatch!");
+    return;
+  }
+  const stepIndex = currentMainTask.subtasks.findIndex(
+    (step) => step.id === stepId
+  );
+  if (stepIndex > -1) {
+    currentMainTask.subtasks[stepIndex].completed =
+      !currentMainTask.subtasks[stepIndex].completed;
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subtasks: currentMainTask.subtasks }),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      await renderMainTask(); // Re-render to update UI
+      updateMainTaskProgressBar(); // Update progress bar
+    } catch (error) {
+      console.error("Error toggling step completion:", error);
     }
+  }
 }
 
-// --- NEW Progress Bar Functions ---
+// Update progress bar for main task
 function updateMainTaskProgressBar() {
-    if (!progressBarContainer || !progressBarFill || !progressText) {
-        console.warn("Progress bar elements not found in DOM.");
-        return;
-    }
-
-    if (!mainTask || mainTask.subtasks.length === 0) {
-        progressBarContainer.classList.add('hidden'); // Hide if no main task or no subtasks
-        return;
-    }
-
-    const completedSteps = mainTask.subtasks.filter(step => step.done).length;
-    const totalSteps = mainTask.subtasks.length;
-    const percentage = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
-
-    progressBarFill.style.width = `${percentage}%`;
-    progressText.textContent = `${completedSteps}/${totalSteps} steps completed (${Math.round(percentage)}%)`;
-
-    progressBarContainer.classList.remove('hidden'); // Show the bar
+  if (
+    currentMainTask &&
+    currentMainTask.subtasks &&
+    currentMainTask.subtasks.length > 0
+  ) {
+    const completedSteps = currentMainTask.subtasks.filter(
+      (step) => step.completed
+    ).length;
+    const totalSteps = currentMainTask.subtasks.length;
+    const progress = (completedSteps / totalSteps) * 100;
+    progressBarFill.style.width = `${progress}%`;
+    progressText.textContent = `${completedSteps}/${totalSteps} Steps Completed`;
+    progressBarContainer.classList.remove("hidden");
+  } else {
+    progressBarFill.style.width = "0%";
+    progressText.textContent = "0/0 Steps Completed";
+    progressBarContainer.classList.add("hidden");
+  }
 }
-
-function checkAndMarkMainTaskDoneIfAllSubtasksAreDone() {
-    if (mainTask && mainTask.subtasks.length > 0) {
-        const allSubtasksDone = mainTask.subtasks.every(step => step.done);
-        if (allSubtasksDone && !mainTask.done) {
-            // Small delay to allow user to see 100% before alert and task removal
-            setTimeout(() => {
-                markMainTaskDone(); // Use the existing function
-                alert("🎉 All steps completed! Main task marked as done!");
-            }, 300); // 300ms delay
-        }
-    }
-}
-
-// --- NEW Music Player Functions ---
-
-// Helper to extract YouTube Video ID from various URL formats
-function getYouTubeVideoId(url) {
-    let videoId = null;
-    const regex = /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-    const match = url.match(regex);
-    if (match && match[1]) {
-        videoId = match[1];
-    }
-    return videoId;
-}
-
-// Function to add a tune to the playlist
-function addTune() {
-    const url = youtubeUrlInput.value.trim();
-    if (!url) {
-        alert("Please paste a YouTube video link.");
-        return;
-    }
-
-    const videoId = getYouTubeVideoId(url);
-    if (!videoId) {
-        alert("Invalid YouTube video link. Please make sure it's a valid YouTube URL.");
-        return;
-    }
-
-    // For simplicity, we'll use the full URL as the title for now.
-    // In a more advanced version with a backend, you could fetch the actual title.
-    const title = url; // Use full URL as title initially
-    const tune = { videoId: videoId, title: title };
-
-    musicPlaylist.push(tune);
-    saveMusicPlaylist();
-    youtubeUrlInput.value = ""; // Clear input field
-    renderMusicPlaylist(); // Re-render the playlist to show the new tune
-
-    // If this is the first tune added, load it into the player
-    if (musicPlaylist.length === 1 && playerReady) {
-        currentTuneIndex = 0;
-        player.loadVideoById(musicPlaylist[currentTuneIndex].videoId);
-        updatePlayerControls(); // Enable buttons
-    }
-}
-
-// Function to render the music playlist in the UL
-function renderMusicPlaylist() {
-    musicPlaylistUl.innerHTML = ""; // Clear existing list items
-
-    if (musicPlaylist.length === 0) {
-        playlistPlaceholder.style.display = 'block'; // Show placeholder
-        playerPlaceholder.style.display = 'block'; // Show player placeholder
-        playPauseTuneBtn.textContent = '▶️ Play'; // Reset play button text
-        updatePlayerControls(); // Disable buttons
-        return;
-    } else {
-        playlistPlaceholder.style.display = 'none'; // Hide placeholder
-        playerPlaceholder.style.display = 'none'; // Hide player placeholder if tunes exist
-    }
-
-    musicPlaylist.forEach((tune, index) => {
-        const li = document.createElement("li");
-        li.classList.add("flex", "items-center", "justify-between", "py-1");
-
-        const titleSpan = document.createElement("span");
-        // Display a more user-friendly title, maybe just a truncated URL or a generic "YouTube Video"
-        // Or, you could prompt the user for a title when adding.
-        titleSpan.textContent = tune.title.length > 40 ? tune.title.substring(0, 37) + '...' : tune.title;
-        titleSpan.classList.add("flex-1", "cursor-pointer", "hover:underline");
-        // Highlight the currently playing song
-        if (index === currentTuneIndex) {
-            titleSpan.classList.add("font-bold", "text-purple-700", "dark:text-purple-300");
-        }
-        titleSpan.onclick = () => {
-            currentTuneIndex = index;
-            playTune(currentTuneIndex);
-            renderMusicPlaylist(); // Re-render to highlight current song
-        };
-
-        const controlsDiv = document.createElement("div");
-        controlsDiv.classList.add("flex", "gap-2");
-
-        const playBtn = document.createElement("button");
-        playBtn.innerHTML = '▶️';
-        playBtn.classList.add("text-sm", "px-2", "py-1", "rounded", "hover:bg-green-200", "dark:hover:bg-green-800");
-        playBtn.onclick = (e) => {
-            e.stopPropagation(); // Prevent li.onclick from firing
-            currentTuneIndex = index;
-            playTune(currentTuneIndex);
-            renderMusicPlaylist(); // Re-render to highlight current song
-        };
-
-        const removeBtn = document.createElement("button");
-        removeBtn.innerHTML = '🗑️';
-        removeBtn.classList.add("text-sm", "px-2", "py-1", "rounded", "hover:bg-red-200", "dark:hover:bg-red-800");
-        removeBtn.onclick = (e) => {
-            e.stopPropagation(); // Prevent li.onclick from firing
-            removeTune(index);
-        };
-
-        controlsDiv.appendChild(playBtn);
-        controlsDiv.appendChild(removeBtn);
-
-        li.appendChild(titleSpan);
-        li.appendChild(controlsDiv);
-        musicPlaylistUl.appendChild(li);
-    });
-
-    updatePlayerControls(); // Update buttons after rendering
-}
-
-// Function to remove a tune from the playlist
-function removeTune(index) {
-    if (index === currentTuneIndex) {
-        // If removing the currently playing song, pause it
-        player.pauseVideo();
-    }
-
-    musicPlaylist.splice(index, 1);
-    saveMusicPlaylist();
-
-    // Adjust currentTuneIndex if the removed song was before the current one, or if current is out of bounds
-    if (musicPlaylist.length > 0) {
-        if (currentTuneIndex >= musicPlaylist.length) {
-            currentTuneIndex = musicPlaylist.length - 1; // Go to last song if current was the last
-        }
-    } else {
-        currentTuneIndex = 0; // Reset if playlist is empty
-    }
-
-    renderMusicPlaylist(); // Re-render the list
-
-    // If playlist is not empty and player is ready, load the new current song
-    if (musicPlaylist.length > 0 && playerReady) {
-        player.loadVideoById(musicPlaylist[currentTuneIndex].videoId);
-    } else if (musicPlaylist.length === 0 && playerReady) {
-        // If playlist is now empty, clear the player
-        player.clearVideo();
-    }
-}
-
-// Function to play a specific tune by index
-function playTune(index) {
-    if (!playerReady || musicPlaylist.length === 0) return;
-
-    // Ensure index is within bounds
-    currentTuneIndex = Math.min(Math.max(0, index), musicPlaylist.length - 1);
-
-    const tune = musicPlaylist[currentTuneIndex];
-    if (tune) {
-        player.loadVideoById(tune.videoId);
-        playPauseTuneBtn.textContent = '⏸️ Pause'; // Change button to pause
-        renderMusicPlaylist(); // Re-render to highlight current song
-    }
-}
-
-// Function to toggle play/pause
-function togglePlayPauseTune() {
-    if (!playerReady || musicPlaylist.length === 0) {
-        // If playlist is empty, and user clicks play, and there are tunes
-        if (musicPlaylist.length > 0) {
-            playTune(currentTuneIndex); // Try to play the current tune if available
-        }
-        return;
-    }
-
-    const playerState = player.getPlayerState();
-    if (playerState === YT.PlayerState.PLAYING) {
-        player.pauseVideo();
-    } else {
-        // If paused, ended, unstarted, or buffered
-        // If current tune index is invalid (e.g., after last tune removed), load the first one.
-        if (musicPlaylist[currentTuneIndex]) {
-            player.playVideo();
-        } else if (musicPlaylist.length > 0) {
-            currentTuneIndex = 0; // Default to first tune
-            playTune(currentTuneIndex);
-        }
-    }
-    updatePlayerControls(); // Update buttons immediately
-}
-
-// Function to play the next tune
-function nextTune() {
-    if (!playerReady || musicPlaylist.length === 0) return;
-
-    let nextIndex = currentTuneIndex + 1;
-    if (nextIndex >= musicPlaylist.length) {
-        nextIndex = 0; // Loop back to the start
-    }
-    playTune(nextIndex);
-}
-
-// Function to play the previous tune
-function prevTune() {
-    if (!playerReady || musicPlaylist.length === 0) return;
-
-    let prevIndex = currentTuneIndex - 1;
-    if (prevIndex < 0) {
-        prevIndex = musicPlaylist.length - 1; // Loop to the end
-    }
-    playTune(prevIndex);
-}
-
-// Function to update the disabled state of player control buttons
-function updatePlayerControls() {
-    if (musicPlaylist.length === 0) {
-        prevTuneBtn.disabled = true;
-        nextTuneBtn.disabled = true;
-        playPauseTuneBtn.disabled = true;
-        playPauseTuneBtn.textContent = '▶️ Play'; // Reset play button text
-    } else {
-        prevTuneBtn.disabled = false;
-        nextTuneBtn.disabled = false;
-        playPauseTuneBtn.disabled = false;
-        // Keep Play/Pause text based on player state, handled in onPlayerStateChange
-    }
-}
-
-// --- END NEW Music Player Functions ---
-
 
 // --- Pomodoro Timer Functions ---
-function formatTime(seconds) {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-}
-
 function updateTimerDisplay() {
-    countdown.textContent = formatTime(timer);
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+  countdownDisplay.textContent = `${minutes
+    .toString()
+    .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
 
 function startTimer() {
-    if (isRunning) return; // Prevent multiple intervals
-    isRunning = true;
-
-    intervalId = setInterval(() => {
-        timer--;
+  if (isPaused && timeLeft > 0) {
+    isPaused = false;
+    timerStatusDisplay.textContent = isFocusTime
+      ? "Focus Time!"
+      : "Break Time!";
+    pomodoroInterval = setInterval(() => {
+      timeLeft--;
+      updateTimerDisplay();
+      if (timeLeft <= 0) {
+        clearInterval(pomodoroInterval);
+        isPaused = true;
+        // Play a sound or alert
+        alert(
+          isFocusTime
+            ? "Focus Time Ended! Take a break."
+            : "Break Ended! Back to work."
+        );
+        isFocusTime = !isFocusTime; // Toggle between focus and break
+        timeLeft = isFocusTime ? 25 * 60 : 5 * 60; // 25 min focus, 5 min break
+        timerStatusDisplay.textContent = "Ready?";
         updateTimerDisplay();
-
-        if (timer <= 0) {
-            clearInterval(intervalId);
-            isRunning = false;
-            playNotificationSound(); // Optional: Add a sound notification
-
-            if (isFocusSession) {
-                alert("Time for a break! Take 5 minutes.");
-                timer = BREAK_TIME;
-                isFocusSession = false;
-                timerStatus.textContent = "Break Time!";
-            } else {
-                alert("Break over! Time to focus again.");
-                timer = FOCUS_TIME;
-                isFocusSession = true;
-                timerStatus.textContent = "Focus Time!";
-            }
-            updateTimerDisplay();
-            // Optionally auto-start next session, or require user click
-            // startTimer(); // Auto-start
-        }
-    }, 1000); // Update every second
+      }
+    }, 1000);
+  }
 }
 
 function pauseTimer() {
-    clearInterval(intervalId);
-    isRunning = false;
+  isPaused = true;
+  clearInterval(pomodoroInterval);
+  timerStatusDisplay.textContent = "Paused";
 }
 
 function resetTimer() {
-    clearInterval(intervalId);
-    isRunning = false;
-    timer = FOCUS_TIME;
-    isFocusSession = true;
-    timerStatus.textContent = "Focus Time!";
-    updateTimerDisplay();
+  clearInterval(pomodoroInterval);
+  isPaused = true;
+  isFocusTime = true;
+  timeLeft = 25 * 60;
+  updateTimerDisplay();
+  timerStatusDisplay.textContent = "Ready?";
 }
 
-function playNotificationSound() {
-    // You can add a small audio file here (e.g., 'ding.mp3')
-    // const audio = new Audio('path/to/your/sound.mp3');
-    // audio.play();
-    console.log("Timer finished sound!"); // Placeholder for notification sound
+// --- Music Player Functions (Integrated with API) ---
+
+// Fetches all tunes from the backend
+async function fetchTunes() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/tunes`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const tunes = await response.json();
+    return tunes;
+  } catch (error) {
+    console.error("Error fetching tunes:", error);
+    return [];
+  }
 }
 
-// Function to show/hide the timer panel
-function togglePomodoroDisplay(show) {
-    if (show) {
-        pomodoroTimer.classList.remove('hidden');
-        // Ensure timer display is correct when shown (e.g., if it was reset while hidden)
-        if (!isRunning) {
-            updateTimerDisplay();
+// Renders the music playlist
+async function renderMusicPlaylist() {
+  musicPlaylist = await fetchTunes();
+  musicPlaylistUl.innerHTML = ""; // Clear existing list
+
+  if (musicPlaylist.length === 0) {
+    musicPlaylistUl.innerHTML =
+      '<p class="text-gray-600 dark:text-gray-400 text-center">Your playlist is empty. Add a YouTube URL!</p>';
+    // Hide player and controls if playlist is empty
+    playerPlaceholder.classList.add("hidden");
+    playlistPlaceholder.classList.add("hidden");
+    return;
+  } else {
+    playerPlaceholder.classList.remove("hidden");
+    playlistPlaceholder.classList.remove("hidden");
+  }
+
+  musicPlaylist.forEach((tune, index) => {
+    const li = document.createElement("li");
+    li.className = `flex items-center justify-between p-2 rounded-md ${
+      index === currentTuneIndex ? "bg-purple-200 dark:bg-purple-700" : ""
+    }`;
+    li.innerHTML = `
+            <span class="tune-title-editable flex-1 cursor-pointer truncate mr-2 ${
+              index === currentTuneIndex ? "font-bold" : ""
+            }">${tune.title || "Unknown Title"}</span>
+            <div class="flex items-center gap-2">
+                <button data-id="${
+                  tune.id
+                }" data-index="${index}" class="play-tune-btn btn-purple px-2 py-1 rounded-md text-sm">▶️ Play</button>
+                <button data-id="${
+                  tune.id
+                }" class="delete-tune-btn btn-red px-2 py-1 rounded-md text-sm">🗑️</button>
+            </div>
+        `;
+    musicPlaylistUl.appendChild(li);
+
+    li.querySelector(".play-tune-btn").addEventListener("click", (e) => {
+      const tuneIndex = parseInt(e.target.dataset.index);
+      playTune(tuneIndex);
+    });
+    li.querySelector(".delete-tune-btn").addEventListener("click", () =>
+      deleteTune(tune.id)
+    );
+
+    // Event listener for editing the tune title
+    const tuneTitleSpan = li.querySelector(".tune-title-editable");
+    tuneTitleSpan.addEventListener("dblclick", () => {
+      const currentTitle = tuneTitleSpan.textContent;
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = currentTitle;
+      input.className =
+        "w-full px-1 py-0.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-black dark:text-white";
+
+      tuneTitleSpan.replaceWith(input);
+      input.focus();
+
+      const saveTitle = async () => {
+        const newTitle = input.value.trim();
+        if (newTitle && newTitle !== currentTitle) {
+          await updateTuneTitle(tune.id, newTitle); // This calls the global function
         }
-    } else {
-        pomodoroTimer.classList.add('hidden');
-        pauseTimer(); // Pause if hidden
-        resetTimer(); // Reset if hidden
-    }
+        renderMusicPlaylist(); // Re-render to update the title immediately
+      };
+
+      input.addEventListener("blur", saveTitle);
+      input.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          input.blur(); // Trigger blur to save
+        }
+      });
+    });
+  });
+
+  // If a tune is currently selected, ensure it's loaded in the player
+  if (player && musicPlaylist.length > 0 && currentTuneIndex !== -1) {
+    player.loadVideoById(musicPlaylist[currentTuneIndex].videoId);
+  }
+  updatePlayerControls(); // Update controls based on playlist state
 }
 
+async function addTune() {
+  const youtubeUrl = youtubeUrlInput.value.trim();
+  if (youtubeUrl) {
+    const videoId = getYouTubeVideoId(youtubeUrl);
+    if (videoId) {
+      try {
+        // Fetch video details to get the title
+        const response = await fetch(
+          `https://noembed.com/embed?url=${youtubeUrl}`
+        );
+        const data = await response.json();
+        const title = data.title || "YouTube Tune"; // Default title if not found
 
-// --- Theme Toggling Logic ---
-function applyTheme(theme) {
-    if (theme === "dark") {
-        body.classList.add("dark");
-        body.classList.remove("light");
-        toggleBtn.innerHTML = '☀️ Light Mode'; // Using innerHTML for emoji
+        const addResponse = await fetch(`${API_BASE_URL}/tunes`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ videoId, title }), // Send videoId and fetched title
+        });
+
+        if (!addResponse.ok) {
+          throw new Error(`HTTP error! status: ${addResponse.status}`);
+        }
+        const newTune = await addResponse.json();
+        console.log("Tune added:", newTune);
+        youtubeUrlInput.value = ""; // Clear input
+
+        // If this is the first tune, set it as current
+        if (musicPlaylist.length === 0) {
+          currentTuneIndex = 0;
+        }
+        await renderMusicPlaylist(); // Re-render the playlist
+
+        // If player is ready and a tune is selected, load/play it
+        if (player && musicPlaylist.length > 0 && currentTuneIndex !== -1) {
+          player.loadVideoById(musicPlaylist[currentTuneIndex].videoId);
+          player.playVideo(); // Auto-play the newly added tune
+        }
+        updatePlayerControls(); // Update controls
+      } catch (error) {
+        console.error("Error adding tune:", error);
+        alert("Failed to add tune. Please check the URL and try again.");
+      }
     } else {
-        body.classList.add("light");
-        body.classList.remove("dark");
-        toggleBtn.innerHTML = '🌙 Dark Mode'; // Using innerHTML for emoji
+      alert("Please enter a valid YouTube URL.");
     }
+  }
 }
 
-// --- Page Turning Logic ---
-function showPage(pageName) {
-    if (pageName === 'mainTask') {
-        bookContainer.classList.remove('show-right');
-        bookContainer.classList.add('show-left');
-        // Set active styles for "Today's Task" button
-        showMainTaskBtn.classList.add('bg-blue-400', 'text-white', 'hover:bg-blue-500');
-        showMainTaskBtn.classList.remove('bg-gray-200', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-50', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
-    } else if (pageName === 'allTasks') {
-        bookContainer.classList.remove('show-left');
-        bookContainer.classList.add('show-right');
-        // Set active styles for "All Tasks" button
-        showAllTasksBtn.classList.add('bg-blue-400', 'text-white', 'hover:bg-blue-500');
-        showAllTasksBtn.classList.remove('bg-gray-200', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-50', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
+function playTune(index) {
+  if (index >= 0 && index < musicPlaylist.length) {
+    currentTuneIndex = index;
+    if (player) {
+      player.loadVideoById(musicPlaylist[currentTuneIndex].videoId);
+      player.playVideo();
     }
-    // Remove active styles from the other button regardless of which page is selected
-    if (pageName === 'mainTask') {
-        showAllTasksBtn.classList.remove('bg-blue-400', 'text-white', 'hover:bg-blue-500');
-        showAllTasksBtn.classList.add('bg-gray-200', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-50', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
-    } else {
-        showMainTaskBtn.classList.remove('bg-blue-400', 'text-white', 'hover:bg-blue-500');
-        showMainTaskBtn.classList.add('bg-gray-200', 'text-gray-700', 'dark:bg-gray-700', 'dark:text-gray-50', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
-    }
+    renderMusicPlaylist(); // Re-render to highlight current tune
+    updatePlayerControls();
+  }
 }
 
+function togglePlayPauseTune() {
+  if (!player || musicPlaylist.length === 0 || currentTuneIndex === -1) return;
 
-// --- Event Listeners ---
-// Left Panel (Main Task) event listener for input
-taskInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
-        addMainTask();
-    }
-});
+  const playerState = player.getPlayerState();
+  if (playerState === YT.PlayerState.PLAYING) {
+    player.pauseVideo();
+  } else {
+    player.playVideo();
+  }
+  updatePlayerControls();
+}
 
-// "Add Step" button for main task
-addStepBtn.onclick = showStepForm;
+function nextTune() {
+  if (musicPlaylist.length === 0) return;
 
-// "Mark Done" button for main task
-markDoneBtn.onclick = markMainTaskDone;
+  currentTuneIndex = (currentTuneIndex + 1) % musicPlaylist.length;
+  playTune(currentTuneIndex);
+}
 
-// Step form submission for main task
-stepForm.onsubmit = (e) => {
-    e.preventDefault();
-    submitStep();
-};
+function prevTune() {
+  if (musicPlaylist.length === 0) return;
 
-// Theme toggle button
-toggleBtn.addEventListener("click", () => {
-    if (body.classList.contains("dark")) {
-        applyTheme("light");
-        localStorage.setItem("theme", "light");
+  currentTuneIndex =
+    (currentTuneIndex - 1 + musicPlaylist.length) % musicPlaylist.length;
+  playTune(currentTuneIndex);
+}
+
+function updatePlayerControls() {
+  const isPlaylistEmpty = musicPlaylist.length === 0;
+  const isTuneSelected = currentTuneIndex !== -1;
+
+  playPauseTuneBtn.disabled = isPlaylistEmpty;
+  nextTuneBtn.disabled = isPlaylistEmpty;
+  prevTuneBtn.disabled = isPlaylistEmpty;
+
+  if (player && isTuneSelected) {
+    const playerState = player.getPlayerState();
+    if (playerState === YT.PlayerState.PLAYING) {
+      playPauseTuneBtn.innerHTML = "⏸️ Pause";
     } else {
-        applyTheme("dark");
-        localStorage.setItem("theme", "dark");
+      playPauseTuneBtn.innerHTML = "▶️ Play";
     }
-});
+  } else {
+    playPauseTuneBtn.innerHTML = "▶️ Play";
+  }
+}
 
-// Page turning navigation buttons
-showMainTaskBtn.addEventListener('click', () => showPage('mainTask'));
-showAllTasksBtn.addEventListener('click', () => showPage('allTasks'));
+async function deleteTune(tuneId) {
+  if (confirm("Are you sure you want to remove this tune from the playlist?")) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tunes/${tuneId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      console.log("Tune deleted successfully");
 
-// Pomodoro Timer Event Listeners
-startTimerBtn.addEventListener('click', startTimer);
-pauseTimerBtn.addEventListener('click', pauseTimer);
-resetTimerBtn.addEventListener('click', resetTimer);
+      const deletedIndex = musicPlaylist.findIndex(
+        (tune) => tune.id === tuneId
+      );
+      if (deletedIndex !== -1) {
+        musicPlaylist.splice(deletedIndex, 1); // Remove from local array
 
+        if (deletedIndex === currentTuneIndex) {
+          // If the current playing tune was deleted
+          if (musicPlaylist.length > 0) {
+            // Try to play the next tune, or the first if it was the last one
+            currentTuneIndex = Math.min(deletedIndex, musicPlaylist.length - 1); // Stay at same index or last
+            if (player && typeof player.loadVideoById === "function") {
+              // Ensure player methods exist
+              player.loadVideoById(musicPlaylist[currentTuneIndex].videoId);
+              player.playVideo(); // Continue playing if there are still tunes
+            } else {
+              playTune(currentTuneIndex); // Fallback to playTune
+            }
+          } else {
+            if (player && typeof player.stopVideo === "function") {
+              player.stopVideo();
+            }
+            currentTuneIndex = -1;
+          }
+        } else if (deletedIndex < currentTuneIndex) {
+          // If a tune before the current one was deleted, adjust currentTuneIndex
+          currentTuneIndex--;
+        }
+      }
 
-// --- NEW Music Player Event Listeners ---
-addTuneBtn.addEventListener('click', addTune);
-youtubeUrlInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        addTune();
+      await renderMusicPlaylist(); // Re-render the playlist
+      updatePlayerControls(); // Ensure controls are correctly enabled/disabled
+    } catch (error) {
+      console.error("Error deleting tune:", error);
     }
-});
-playPauseTuneBtn.addEventListener('click', togglePlayPauseTune);
-nextTuneBtn.addEventListener('click', nextTune);
-prevTuneBtn.addEventListener('click', prevTune);
-// --- END NEW Music Player Event Listeners ---
+  }
+}
 
+// === START OF MOVED FUNCTION ===
+// Function to update a tune's title (MOVED TO GLOBAL SCOPE)
+async function updateTuneTitle(tuneId, newTitle) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/tunes/${tuneId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ title: newTitle }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${errorText}`
+      );
+    }
+
+    const updatedTune = await response.json();
+    console.log("Tune title updated successfully:", updatedTune);
+
+    // Update the tune in the local musicPlaylist array
+    const tuneIndex = musicPlaylist.findIndex((tune) => tune.id === tuneId);
+    if (tuneIndex > -1) {
+      musicPlaylist[tuneIndex].title = updatedTune.title;
+    }
+  } catch (error) {
+    console.error("Error updating tune title:", error);
+    alert("Failed to update tune title. Check console for details.");
+  }
+}
+// === END OF MOVED FUNCTION ===
 
 // --- Initial Setup on DOM Load ---
-document.addEventListener("DOMContentLoaded", () => {
-    // Apply saved theme or system preference
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme) {
-        applyTheme(savedTheme);
-    } else if (
-        window.matchMedia &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches
-    ) {
-        applyTheme("dark");
-    } else {
-        applyTheme("light");
-    }
+document.addEventListener("DOMContentLoaded", async () => {
+  // Apply saved theme or system preference
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme) {
+    applyTheme(savedTheme);
+  } else if (
+    window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+  ) {
+    applyTheme("dark");
+  } else {
+    applyTheme("light");
+  }
 
-    // Render initial tasks and set initial page view
-    renderMainTask();
-    renderTasksOnRightPanel();
-    showPage('mainTask'); // Default to showing the "Today's Task" page on load
+  // Render initial tasks and tunes from the backend
+  await renderMainTask();
+  await renderTasksOnRightPanel();
+  await renderMusicPlaylist(); // Fetch and render tunes on load
 
-    updateMainTaskProgressBar(); // <--- This ensures the progress bar is shown/updated on load
+  showPage("mainTask"); // Default to showing the "Today's Task" page on load
 
-    // NEW: Render music playlist on load
-    renderMusicPlaylist();
-    // END NEW
+  updateMainTaskProgressBar();
 });
