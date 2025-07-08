@@ -463,91 +463,91 @@
         background-color: #ef4444;
       }
       /* Music Player Styles */
-.music-player-panel {
-    background-color: #f7e0fc; /* Light Purple for Light Mode */
-    color: #5b21b6; /* Dark Purple Text */
-    border: 1px solid #d8b4fe; /* Purple border */
-    transition: all 0.4s ease;
-}
+      .music-player-panel {
+        background-color: #f7e0fc; /* Light Purple for Light Mode */
+        color: #5b21b6; /* Dark Purple Text */
+        border: 1px solid #d8b4fe; /* Purple border */
+        transition: all 0.4s ease;
+      }
 
-body.dark .music-player-panel {
-    background-color: #372a42; /* Darker Purple for Dark Mode */
-    color: #d1c7e0; /* Lighter text for contrast */
-    border-color: #5c4b6b; /* Darker purple border */
-}
+      body.dark .music-player-panel {
+        background-color: #372a42; /* Darker Purple for Dark Mode */
+        color: #d1c7e0; /* Lighter text for contrast */
+        border-color: #5c4b6b; /* Darker purple border */
+      }
 
-.music-player-title {
-    color: #6d28d9; /* Deeper Purple */
-    transition: color 0.4s ease;
-}
+      .music-player-title {
+        color: #6d28d9; /* Deeper Purple */
+        transition: color 0.4s ease;
+      }
 
-body.dark .music-player-title {
-    color: #d8b4fe; /* Lighter Purple */
-}
+      body.dark .music-player-title {
+        color: #d8b4fe; /* Lighter Purple */
+      }
 
-.music-playlist-header {
-    color: #6d28d9; /* Deeper Purple */
-    transition: color 0.4s ease;
-}
+      .music-playlist-header {
+        color: #6d28d9; /* Deeper Purple */
+        transition: color 0.4s ease;
+      }
 
-body.dark .music-playlist-header {
-    color: #d8b4fe; /* Lighter Purple */
-}
+      body.dark .music-playlist-header {
+        color: #d8b4fe; /* Lighter Purple */
+      }
 
-#musicPlaylist li {
-    color: #6b21a8; /* Purple text for list items */
-    transition: color 0.4s ease;
-}
+      #musicPlaylist li {
+        color: #6b21a8; /* Purple text for list items */
+        transition: color 0.4s ease;
+      }
 
-body.dark #musicPlaylist li {
-    color: #e9d5ff; /* Lighter purple text for list items */
-}
+      body.dark #musicPlaylist li {
+        color: #e9d5ff; /* Lighter purple text for list items */
+      }
 
-/* Specific button styles for the music player */
-.btn-purple {
-    background-color: #a78bfa; /* Medium Purple */
-    color: white;
-}
-.btn-purple:hover {
-    background-color: #8b5cf6; /* Darker Purple */
-}
-body.dark .btn-purple {
-    background-color: #7c3aed; /* Darker Purple for Dark Mode */
-    color: white;
-}
-body.dark .btn-purple:hover {
-    background-color: #6d28d9; /* Even Darker Purple */
-}
+      /* Specific button styles for the music player */
+      .btn-purple {
+        background-color: #a78bfa; /* Medium Purple */
+        color: white;
+      }
+      .btn-purple:hover {
+        background-color: #8b5cf6; /* Darker Purple */
+      }
+      body.dark .btn-purple {
+        background-color: #7c3aed; /* Darker Purple for Dark Mode */
+        color: white;
+      }
+      body.dark .btn-purple:hover {
+        background-color: #6d28d9; /* Even Darker Purple */
+      }
 
-.btn-green {
-    background-color: #34d399; /* Green */
-    color: white;
-}
-.btn-green:hover {
-    background-color: #10b981; /* Darker Green */
-}
-body.dark .btn-green {
-    background-color: #10b981; /* Darker Green for Dark Mode */
-    color: white;
-}
-body.dark .btn-green:hover {
-    background-color: #059669; /* Even Darker Green */
-}
+      .btn-green {
+        background-color: #34d399; /* Green */
+        color: white;
+      }
+      .btn-green:hover {
+        background-color: #10b981; /* Darker Green */
+      }
+      body.dark .btn-green {
+        background-color: #10b981; /* Darker Green for Dark Mode */
+        color: white;
+      }
+      body.dark .btn-green:hover {
+        background-color: #059669; /* Even Darker Green */
+      }
 
-.btn-grey {
-    background-color: #e5e7eb; /* Light Grey */
-    color: #4b5563; /* Dark Grey Text */
-}
-.btn-grey:hover {
-    background-color: #d1d5db; /* Medium Grey */
-}
-body.dark .btn-grey {
-    background-color: #4b5563; /* Dark Grey for Dark Mode */
-    color: #f9fafb; /* Light Text */
-}
-body.dark .btn-grey:hover {
-    background-color: #374151; /* Even Darker Grey */
-}
+      .btn-grey {
+        background-color: #e5e7eb; /* Light Grey */
+        color: #4b5563; /* Dark Grey Text */
+      }
+      .btn-grey:hover {
+        background-color: #d1d5db; /* Medium Grey */
+      }
+      body.dark .btn-grey {
+        background-color: #4b5563; /* Dark Grey for Dark Mode */
+        color: #f9fafb; /* Light Text */
+      }
+      body.dark .btn-grey:hover {
+        background-color: #374151; /* Even Darker Grey */
+      }
     </style>
   </head>
 
@@ -589,12 +589,14 @@ body.dark .btn-grey:hover {
               Choose your most important task for today and break it down into
               some cutie small steps! :3
             </p>
+
             <input
               id="taskInput"
               type="text"
               class="w-full px-4 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
               placeholder="Task"
             />
+
             <div class="flex gap-2">
               <button
                 onclick="showStepForm()"
@@ -602,102 +604,35 @@ body.dark .btn-grey:hover {
               >
                 Add Step
               </button>
-              <button class="px-4 py-2 rounded font-medium shadow btn-pink">
+              <button
+                id="markDoneBtn"
+                class="px-4 py-2 rounded font-medium shadow btn-pink"
+              >
                 Mark Done
               </button>
             </div>
 
-            <div
-              id="pomodoroTimer"
-              class="hidden text-center mt-6 p-4 rounded-lg bg-blue-100 dark:bg-blue-900 shadow"
-            >
-              <h3
-                id="timerStatus"
-                class="text-lg font-semibold text-blue-800 dark:text-red-600 mb-2"
+            <!-- Step List -->
+            <ul id="stepList" class="list-disc list-inside space-y-2 mt-4"></ul>
+
+            <!-- Step Form -->
+            <div id="stepForm" class="hidden flex gap-2 mt-2">
+              <input
+                id="stepInput"
+                type="text"
+                class="flex-1 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                placeholder="Add a small step..."
+              />
+              <button
+                type="button"
+                onclick="submitStep()"
+                class="px-3 py-2 rounded transition btn-yellow"
               >
-                Focus Time!
-              </h3>
-              <div
-                class="text-5xl font-bold text-blue-700 dark:text-blue-100"
-                id="countdown"
-              >
-                25:00
-              </div>
-              <div class="flex justify-center gap-4 mt-4">
-                <button
-                  id="startTimerBtn"
-                  class="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
-                >
-                  Start
-                </button>
-                <button
-                  id="pauseTimerBtn"
-                  class="px-4 py-2 rounded bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700"
-                >
-                  Pause
-                </button>
-                <button
-                  id="resetTimerBtn"
-                  class="px-4 py-2 rounded bg-red-500 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
-                >
-                  Reset
-                </button>
-              </div>
+                ➕ Add
+              </button>
             </div>
-            <div id="progressBarContainer" class="hidden mt-6">
-              <div class="relative pt-1">
-                <div
-                  class="overflow-hidden h-4 mb-4 text-xs flex rounded bg-pink-200 dark:bg-pink-900"
-                >
-                  <div
-                    id="progressBarFill"
-                    style="width: 0%"
-                    class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-pink-500 transition-all duration-500 ease-out"
-                  ></div>
-                </div>
-                <p
-                  id="progressText"
-                  class="text-sm font-medium text-gray-700 dark:text-gray-300 text-center"
-                ></p>
-              </div>
-            </div>
-            <div
-              id="pomodoroTimer"
-              class="hidden text-center mt-6 p-4 rounded-lg bg-blue-100 dark:bg-blue-900 shadow"
-            >
-              <h3
-                id="timerStatus"
-                class="text-lg font-semibold text-blue-800 dark:text-red-600 mb-2"
-              >
-                Focus Time!
-              </h3>
-              <div
-                class="text-5xl font-bold text-blue-700 dark:text-blue-100"
-                id="countdown"
-              >
-                25:00
-              </div>
-              <div class="flex justify-center gap-4 mt-4">
-                <button
-                  id="startTimerBtn"
-                  class="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
-                >
-                  Start
-                </button>
-                <button
-                  id="pauseTimerBtn"
-                  class="px-4 py-2 rounded bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700"
-                >
-                  Pause
-                </button>
-                <button
-                  id="resetTimerBtn"
-                  class="px-4 py-2 rounded bg-red-500 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
-                >
-                  Reset
-                </button>
-              </div>
-            </div>
+
+              <!-- Progress Bar -->
             <div id="progressBarContainer" class="hidden mt-6">
               <div class="relative pt-1">
                 <div
@@ -716,6 +651,48 @@ body.dark .btn-grey:hover {
               </div>
             </div>
 
+            <!-- Pomodoro Timer -->
+            <div
+              id="pomodoroTimer"
+              class="hidden text-center mt-6 p-4 rounded-lg bg-blue-100 dark:bg-blue-900 shadow"
+            >
+              <h3
+                id="timerStatus"
+                class="text-lg font-semibold text-blue-800 dark:text-red-600 mb-2"
+              >
+                Focus Time!
+              </h3>
+              <div
+                class="text-5xl font-bold text-blue-700 dark:text-blue-100"
+                id="countdown"
+              >
+                25:00
+              </div>
+              <div class="flex justify-center gap-4 mt-4">
+                <button
+                  id="startTimerBtn"
+                  class="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+                >
+                  Start
+                </button>
+                <button
+                  id="pauseTimerBtn"
+                  class="px-4 py-2 rounded bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700"
+                >
+                  Pause
+                </button>
+                <button
+                  id="resetTimerBtn"
+                  class="px-4 py-2 rounded bg-red-500 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+
+          
+
+            <!-- Music Player (unchanged) -->
             <div
               id="musicPlayerContainer"
               class="mt-6 p-4 rounded-lg shadow-md music-player-panel"
@@ -778,23 +755,6 @@ body.dark .btn-grey:hover {
                   </p>
                 </ul>
               </div>
-            </div>
-            <ul id="stepList" class="list-disc list-inside space-y-1"></ul>
-            <ul id="stepList" class="list-disc list-inside space-y-1"></ul>
-            <div id="stepForm" class="hidden flex gap-2">
-              <input
-                id="stepInput"
-                type="text"
-                class="flex-1 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                placeholder="Add a small step..."
-              />
-              <button
-                type="button"
-                onclick="submitStep()"
-                class="px-3 py-2 rounded transition btn-yellow"
-              >
-                ➕ Add
-              </button>
             </div>
           </div>
         </div>
