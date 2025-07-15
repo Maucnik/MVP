@@ -1,4 +1,5 @@
-const API_BASE_URL = "http://localhost:3000/api"; // Base URL for API requests
+const API_BASE_URL = `${window.location.origin}/api`;
+ // Base URL for API requests
 // --- Global variable to store the ID of the task currently being edited ---
 let editingTaskId = null; // Initialize to null
 // 1. Load the IFrame Player API code asynchronously.
@@ -111,6 +112,7 @@ const prevTuneBtn = document.getElementById("prevTuneBtn");
 const musicPlaylistUl = document.getElementById("musicPlaylist");
 const playerPlaceholder = document.getElementById("playerPlaceholder");
 const playlistPlaceholder = document.getElementById("playlistPlaceholder");
+const markDoneBtn = document.getElementById("markDoneBtn");
 
 addTuneBtn.addEventListener("click", addTune); // Connects the button to the function
 
@@ -137,6 +139,9 @@ toggleDarkBtn.addEventListener("click", () => {
   const currentTheme = document.body.className;
   applyTheme(currentTheme === "dark" ? "light" : "dark");
 });
+
+markDoneBtn.addEventListener("click", markMainTaskAsDone);
+
 
 // --- Page Turning (UI only, no data logic here) ---
 function showPage(page) {
@@ -253,6 +258,54 @@ async function renderMainTask() {
     progressBarContainer.classList.add("hidden");
   }
 }
+
+async function markMainTaskAsDone() {
+  if (!currentMainTask) {
+    alert("No main task selected.");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/tasks/${currentMainTask.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+  completed: true,
+  completed_at: new Date().toISOString()
+}),
+
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    console.log("Main task marked as done!");
+
+    // 🧹 Clear main task UI
+    taskInput.value = "";
+    stepList.innerHTML =
+      '<p class="italic text-green-600 dark:text-green-300">✅ Task complete! Well done, Darling 🤍</p>';
+    pomodoroTimer.classList.add("hidden");
+    progressBarContainer.classList.add("hidden");
+
+    // 🧽 Remove from currentMainTask
+    currentMainTask = null;
+
+    // ✨ Optional: Switch view back to All Tasks after 2 seconds
+    setTimeout(() => {
+      showPage("allTasks");
+      renderMainTask();
+      renderTasksOnRightPanel();
+      renderCompletionTrends(); // Refresh trends after marking task as done
+    }, 2000);
+  } catch (error) {
+    console.error("Failed to mark main task as done:", error);
+    alert("Something went wrong. Please try again.");
+  }
+}
+
+
 
 // Renders all tasks on the right panel
 // Helper to format recurrence details for display
@@ -416,6 +469,92 @@ async function renderTasksOnRightPanel() {
       .querySelector(".btn-red")
       .addEventListener("click", () => deleteTask(task.id));
   });
+}
+
+// Function to render completion trends
+async function renderCompletionTrends() {
+    const trendsDisplay = document.getElementById('trendsDisplay');
+    const totalCompletedCountElement = document.getElementById('totalCompletedCount');
+    const last7DaysCountElement = document.getElementById('last7DaysCount');
+    const todayCompletedCountElement = document.getElementById('todayCompletedCount');
+    const completionSummaryList = document.getElementById('completionSummaryList');
+
+    if (!trendsDisplay) return; // Ensure the trends section exists
+
+    try {
+        // Fetch all tasks
+        const tasks = await fetchTasks();
+
+        // 1. Filter for completed tasks with a completed_at timestamp
+        const completedTasks = tasks.filter(task => task.completed && task.completed_at);
+
+        // 2. Calculate trends (daily counts)
+        const completionCounts = completedTasks.reduce((acc, task) => {
+            // Get the date part (YYYY-MM-DD) of completed_at
+            const completedDate = new Date(task.completed_at).toISOString().split('T')[0];
+            acc[completedDate] = (acc[completedDate] || 0) + 1;
+            return acc;
+        }, {});
+
+        // 3. Calculate summary statistics
+        const totalCompleted = completedTasks.length;
+
+        // Calculate counts for today and the last 7 days
+        const today = new Date().toISOString().split('T')[0];
+        let todayCount = 0;
+        let last7DaysCount = 0;
+        
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        completedTasks.forEach(task => {
+            const completedDate = new Date(task.completed_at);
+            const completedDateString = completedDate.toISOString().split('T')[0];
+            
+            // Count for today
+            if (completedDateString === today) {
+                todayCount++;
+            }
+
+            // Count for last 7 days (including today)
+            if (completedDate >= sevenDaysAgo) {
+                last7DaysCount++;
+            }
+        });
+
+        // 4. Update the summary display
+        if (totalCompletedCountElement) totalCompletedCountElement.textContent = totalCompleted;
+        if (last7DaysCountElement) last7DaysCountElement.textContent = last7DaysCount;
+        if (todayCompletedCountElement) todayCompletedCountElement.textContent = todayCount;
+
+        // 5. Display trends (e.g., list of completion counts)
+        trendsDisplay.innerHTML = `
+            <h3 class="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Daily Completion Overview</h3>
+            <div id="dailyTrendsList" class="space-y-1"></div>
+        `;
+
+        const dailyTrendsList = document.getElementById('dailyTrendsList');
+        const sortedDates = Object.keys(completionCounts).sort().reverse(); // Sort descending by date
+
+        if (sortedDates.length === 0) {
+            dailyTrendsList.innerHTML = '<p class="italic text-gray-500">No tasks completed yet.</p>';
+        } else {
+            // Display trends for the last 30 days or so
+            sortedDates.slice(0, 30).forEach(date => {
+                const count = completionCounts[date];
+                const trendItem = document.createElement('div');
+                trendItem.className = 'flex items-center text-sm text-gray-700 dark:text-gray-300';
+                trendItem.innerHTML = `<span class="font-medium w-32">${date}</span>: <span class="ml-2 font-bold">${count} tasks</span>`;
+                dailyTrendsList.appendChild(trendItem);
+            });
+        }
+
+    } catch (error) {
+        console.error("Error rendering completion trends:", error);
+        if (trendsDisplay) {
+            trendsDisplay.innerHTML = `<p class="text-red-500">Failed to load trends.</p>`;
+        }
+    }
 }
 
 // Function to populate recurrence fields on edit
@@ -765,7 +904,10 @@ async function toggleTaskComplete(taskId, completed) {
     const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ completed: completed }),
+     body: JSON.stringify({
+  completed: completed,
+  completed_at: completed ? new Date().toISOString() : null
+}),
     });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -776,6 +918,7 @@ async function toggleTaskComplete(taskId, completed) {
       await renderMainTask(); // Re-render main task to reflect strike-through
     }
     await renderTasksOnRightPanel(); // Re-render to update UI immediately
+    await renderCompletionTrends(); // Refresh trends after toggling completion
   } catch (error) {
     console.error("Error toggling task completion:", error);
   }
@@ -1243,6 +1386,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await renderMainTask();
   await renderTasksOnRightPanel();
   await renderMusicPlaylist(); // Fetch and render tunes on load
+  await renderCompletionTrends(); // Render completion trends on load
 
   showPage("mainTask"); // Default to showing the "Today's Task" page on load
 
@@ -1295,6 +1439,8 @@ document.addEventListener("DOMContentLoaded", () => {
       // Add more conditions here for other custom types if they have unique inputs
     });
   }
+  
+
 
   // Handle day selection for weekly/custom recurrence
   daySelectButtons.forEach((button) => {
@@ -1310,3 +1456,5 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
+
+
