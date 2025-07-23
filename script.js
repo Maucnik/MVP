@@ -1238,6 +1238,18 @@ function playTune(index) {
 }
 
 function togglePlayPauseTune() {
+
+  function isLoggedIn() {
+  return !!sessionStorage.getItem("username");
+}
+
+function addTune() {
+  if (!isLoggedIn()) {
+    alert("Login to use the music feature 💖");
+    return;
+  }
+}
+  
   if (!player || musicPlaylist.length === 0 || currentTuneIndex === -1) return;
 
   const playerState = player.getPlayerState();
@@ -1248,6 +1260,7 @@ function togglePlayPauseTune() {
   }
   updatePlayerControls();
 }
+
 
 function nextTune() {
   if (musicPlaylist.length === 0) return;
@@ -1456,5 +1469,113 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
+
+const loginBtn = document.getElementById("loginBtn");
+const registerBtn = document.getElementById("registerBtn");
+const authMessage = document.getElementById("authMessage");
+
+async function loginUser() {
+  const username = document.getElementById("usernameInput").value.trim();
+  const password = document.getElementById("passwordInput").value.trim();
+  if (!username || !password) return (authMessage.textContent = "Please fill out both fields.");
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      authMessage.textContent = `🌟 Welcome, ${data.username}!`;
+      sessionStorage.setItem("username", data.username);
+      document.getElementById("authPanel").style.display = "none";
+      initApp(); // load tasks etc.
+    } else {
+      authMessage.textContent = data.message || "Login failed.";
+    }
+  } catch (err) {
+    authMessage.textContent = "Something went wrong.";
+    console.error(err);
+  }
+}
+
+async function registerUser() {
+  const username = document.getElementById("usernameInput").value.trim();
+  const password = document.getElementById("passwordInput").value.trim();
+  if (!username || !password) return (authMessage.textContent = "Please fill out both fields.");
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      authMessage.textContent = `🎉 Registered! Welcome, ${data.username}!`;
+      sessionStorage.setItem("username", data.username);
+      document.getElementById("authPanel").style.display = "none";
+      initApp();
+    } else {
+      authMessage.textContent = data.message || "Registration failed.";
+    }
+  } catch (err) {
+    authMessage.textContent = "Something went wrong.";
+    console.error(err);
+  }
+}
+
+
+
+loginBtn.addEventListener("click", loginUser);
+registerBtn.addEventListener("click", registerUser);
+
+function initApp() {
+  renderMainTask();
+  renderTasksOnRightPanel();
+
+  const username = sessionStorage.getItem("username");
+  if (username) {
+    showPremiumFeatures();
+  } else {
+    hidePremiumFeatures();
+  }
+}
+
+function showPremiumFeatures() {
+  document.getElementById("premiumFeatures").classList.remove("hidden");
+  document.getElementById("premiumLocked").classList.add("hidden");
+
+  renderCompletionTrends(); // Only run if premium is unlocked
+  // Music setup already triggers with UI
+}
+
+function hidePremiumFeatures() {
+  document.getElementById("premiumFeatures").classList.add("hidden");
+  document.getElementById("premiumLocked").classList.remove("hidden");
+}
+
+
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  await fetch(`${API_BASE_URL}/logout`, { method: "POST" });
+  sessionStorage.clear();
+  location.reload();
+});
+
+window.addEventListener("DOMContentLoaded", () => {
+  initApp(); // always show tasks
+
+  const username = sessionStorage.getItem("username");
+  if (username) {
+    document.getElementById("authPanel").style.display = "none";
+  } else {
+    document.getElementById("authPanel").style.display = "block";
+  }
+});
+
+
 
 
