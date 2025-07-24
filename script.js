@@ -1565,6 +1565,23 @@ document.getElementById("logoutBtn").addEventListener("click", async () => {
   location.reload();
 });
 
+// --- Password Visibility Toggle for the main passwordInput ---
+const passwordInput = document.getElementById("passwordInput");
+const togglePassword = document.getElementById("togglePassword");
+
+if (passwordInput && togglePassword) {
+  togglePassword.addEventListener("click", function () {
+    // Toggle the type attribute between 'password' and 'text'
+    const type =
+      passwordInput.getAttribute("type") === "password" ? "text" : "password";
+    passwordInput.setAttribute("type", type);
+
+    // Toggle the eye icon (open eye / closed eye)
+    this.querySelector("i").classList.toggle("fa-eye");
+    this.querySelector("i").classList.toggle("fa-eye-slash");
+  });
+}
+
 window.addEventListener("DOMContentLoaded", () => {
   initApp(); // always show tasks
 
