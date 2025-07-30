@@ -12,8 +12,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.static(path.join(__dirname, "..")));
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "..", "MVP.html"));
+// app.get("/", (req, res) => {
+//  res.sendFile(path.join(__dirname, "..", "index.html"));
+// });
+app.get("/api/test", (req, res) => { // Changed the path to avoid conflict
+  res.send("Task Buddy Backend (SQLite) is running!");
 });
 
 // Middleware
@@ -280,9 +283,9 @@ async function generateRecurringTasks() {
 // --- API Routes ---
 
 // Basic route to test the server
-app.get("/", (req, res) => {
-  res.send("Task Buddy Backend (SQLite) is running!");
-});
+// app.get("/", (req, res) => {
+ // res.send("Task Buddy Backend (SQLite) is running!");
+//});
 
 // --- TASK API ROUTES ---
 
