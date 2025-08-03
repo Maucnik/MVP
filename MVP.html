@@ -202,12 +202,12 @@
 
       /* Right Panel Title */
       .right-panel h1 {
-        color: #1f2937;
+        color: #924b2c;
         transition: color 0.4s ease;
       }
 
       body.dark .right-panel h1 {
-        color: #f9fafb;
+        color: #ef8432;
       }
 
       /* No task selected message */
@@ -223,7 +223,7 @@
       /* Dynamically added task item */
       .task-item {
         background-color: #fbcfe8;
-        color: #1f2937;
+        color: #36455b;
         /* Default text color for task item */
         transition: all 0.4s ease;
       }
@@ -255,112 +255,24 @@
       }
 
       /* --- Page Turn Effect Styles --- */
-      /* Container for the two "pages" */
-      .book-container {
-        position: relative;
-        width: 100%;
-        /* Occupy full width of its flex parent */
-        height: auto;
-        /* Height determined by content */
-        perspective: 1500px;
-        /* Depth for 3D effect */
-        transform-style: preserve-3d;
-        /* Children render in 3D space */
-        display: flex;
-        /* Arrange children side-by-side initially */
-        justify-content: center;
-        /* Center the book visually */
-        align-items: flex-start;
-        /* Align content at top within the flex container */
-        gap: 2rem;
-        /* Spacing between the "pages" when open */
+      /* These are largely removed or simplified for the fixed panel layout */
+      .main-content-wrapper > div { /* Target the direct children of main-content-wrapper which are now the panels */
+          flex: 1; /* Each panel takes equal width */
       }
 
-      /* Individual "page" panels */
-      .book-page {
-        position: relative;
-        flex: 1;
-        /* Each page takes equal width */
-        transform-origin: left center;
-        /* Rotate from the left edge for the left page */
-        transition: transform 0.8s ease-in-out, opacity 0.4s;
-        /* Smooth rotation and fade */
-        backface-visibility: hidden;
-        /* Hide the back of the page during rotation */
-        min-width: 0;
-        /* Allow flex items to shrink */
-      }
-
-      /* State when the "Today's Task" page (left) is active/visible */
-      .book-container.show-left .left-panel {
-        transform: rotateY(0deg);
-        /* Left page is flat, facing forward */
-        opacity: 1;
-        pointer-events: auto;
-        /* Allow interaction */
-      }
-
-      .book-container.show-left .right-panel {
-        transform: rotateY(180deg);
-        /* Right page is rotated 180deg to hide its front */
-        opacity: 0;
-        pointer-events: none;
-        /* Disable interaction with hidden right page */
-      }
-
-      /* State when the "All Tasks" page (right) is active/visible */
-      .book-container.show-right .left-panel {
-        transform: rotateY(-180deg);
-        /* Left page rotates -180deg to hide its front */
-        opacity: 0;
-        pointer-events: none;
-        /* Disable interaction with hidden left page */
-      }
-
-      .book-container.show-right .right-panel {
-        transform: rotateY(0deg);
-        /* Right page is flat, facing forward */
-        opacity: 1;
-        pointer-events: auto;
-      }
 
       /* Media query for smaller screens (e.g., mobile) */
       @media (max-width: 1023px) {
-        .book-container {
-          flex-direction: column;
-          /* Stack panels vertically */
-          perspective: none;
-          /* Disable 3D perspective */
-          transform-style: flat;
-          /* Disable 3D transforms */
-          gap: 1rem;
-          /* Reduce gap */
-        }
-
-        .book-page {
-          transform-origin: center center;
-          /* No specific 3D origin needed */
-          transition: none;
-          /* No 3D transition */
-          backface-visibility: visible;
-          /* No need to hide backface */
-        }
+        /* No specific 3D origin needed */
+        /* No 3D transition */
+        /* No need to hide backface */
 
         /* Hide/show panels directly on small screens without 3D flip */
-        .book-container.show-right .left-panel,
-        .book-container.show-left .right-panel {
-          display: none;
-          opacity: 0;
-          transform: none;
-          /* Ensure no lingering transforms */
-        }
-
-        .book-container.show-left .left-panel,
-        .book-container.show-right .right-panel {
-          display: block;
-          /* Show the active panel */
-          opacity: 1;
-          transform: none;
+        .left-panel,
+        .right-panel {
+            display: block; /* Both panels are always block on small screens */
+            opacity: 1;
+            transform: none;
         }
       }
 
@@ -554,46 +466,9 @@
       }
     </style>
   </head>
-  <!-- Login/Register Panel -->
-  <div id="authPanel" class="mb-6 text-center">
-    <h2 class="text-lg font-semibold mb-2">👋 Welcome back, darling</h2>
-    <input
-      id="usernameInput"
-      type="text"
-      placeholder="Username"
-      class="px-4 py-2 rounded border"
-    />
-  <div class="relative inline-block align-middle mx-2">
-  <input
-    id="passwordInput"
-    type="password"
-    placeholder="Password"
-    class="w-full px-4 py-2 rounded border pr-10"
-  />
-  <span
-    class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer text-pink-600 dark:text-pink-300"
-    id="togglePassword"
-  >
-    <i class="fas fa-eye"></i>
-  </span>
-</div>
-    <button id="loginBtn" class="btn-yellow px-4 py-2 rounded font-medium">
-      Login
-    </button>
-    <button
-      id="registerBtn"
-      class="btn-pink mt-2 px-4 py-2 rounded font-medium ml-2"
-    >
-      Register
-    </button>
-    <p id="authMessage" class="mt-2 text-sm text-red-500"></p>
-  </div>
+ 
 
-  <button id="logoutBtn" class="btn-grey fixed bottom-4 right-4">
-    🚪 Logout
-  </button>
-
-  <body class="relative text-gray-800 font-sans">
+  <body class="relative text-gray-800 font-sans light">
     <button
       id="toggleDark"
       class="fixed top-4 right-4 z-50 bg-white/80 text-gray-800 border border-gray-300 px-4 py-2 rounded-full shadow hover:bg-gray-200 transition dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600"
@@ -602,211 +477,234 @@
     </button>
 
     <div
-      class="max-w-6xl mx-auto mt-10 px-4 py-8 rounded-3xl main-content-wrapper"
+      id="authPanel"
+      class="max-w-sm mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg text-center space-y-4"
     >
-      <div class="flex justify-center mb-6">
+      <h2 class="text-xl font-semibold text-gray-700">Login or Register</h2>
+
+      <input
+        id="usernameInput"
+        type="text"
+        placeholder="Username"
+        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+      />
+
+      <input
+        id="passwordInput"
+        type="password"
+        placeholder="Password"
+        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+      />
+
+      <div class="flex justify-between space-x-4">
         <button
-          id="showMainTaskBtn"
-          class="px-6 py-2 rounded-l-full font-bold transition-colors shadow"
+          id="loginBtn"
+          type="button"
+          class="flex-1 btn-yellow px-4 py-2 rounded-md font-medium hover:bg-yellow-300 transition"
         >
-          Today's Task
+          Login
         </button>
+
         <button
-          id="showAllTasksBtn"
-          class="px-6 py-2 rounded-r-full font-bold transition-colors shadow"
+          id="registerBtn"
+          type="button"
+          class="flex-1 btn-yellow px-4 py-2 rounded-md font-medium hover:bg-yellow-300 transition"
         >
-          All Tasks
+          Register
         </button>
       </div>
 
-      <div class="book-container show-left flex-col lg:flex-row">
-        <div
-          class="book-page left-panel relative z-10 p-6 rounded-2xl shadow-lg"
+      <p id="authMessage" class="text-sm text-red-600 h-5"></p>
+      <div id="loggedInContent" class="hidden">
+        <button
+          id="logoutBtn"
+          class="mt-4 w-full bg-pink-500 text-white py-2 rounded-lg hover:bg-pink-600 transition duration-200"
         >
-          <div class="relative z-10 space-y-4">
-            <h2 class="text-xl font-semibold">📝 Right now we're doiiing:</h2>
-            <p>
-              Choose your task in the right panel by clicking on "Select", add
-              steps, and track your progress! You can also listen to some music
-              while you work. Let's go, sweetie!
-            </p>
+          Logout
+        </button>
+      </div>
+    </div>
 
-            <input
-              id="taskInput"
-              type="text"
-              class="w-full px-4 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
-              placeholder="Task"
-            />
+    <div
+      class="max-w-6xl mx-auto mt-10 px-4 py-8 rounded-3xl main-content-wrapper flex flex-col lg:flex-row gap-8"
+    >
+      <div class="left-panel relative z-10 p-6 rounded-2xl shadow-lg">
+        <div class="relative z-10 space-y-4">
+          <h2 class="text-xl font-semibold">📝 Right now we're doiiing:</h2>
+          <p>
+            Choose your task in the right panel by clicking on "Select", add
+            steps, and track your progress! If you register/login, you can
+            listen to music of your choice or use the Pomodoro timer! <br />
+            Good luck on your tasks, I am proud of you for trying so hard! 🖤
+          </p>
 
-            <div class="flex gap-2">
-              <button
-                onclick="showStepForm()"
-                class="px-4 py-2 rounded font-medium shadow btn-yellow"
-              >
-                Add Step
-              </button>
-              <button
-                id="markDoneBtn"
-                class="px-4 py-2 rounded font-medium shadow btn-pink"
-              >
-                Mark Done
-              </button>
-            </div>
+          <input
+            id="taskInput"
+            type="text"
+            class="w-full px-4 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+            placeholder="Task"
+          />
 
-            <!-- Step List -->
-            <ul id="stepList" class="list-disc list-inside space-y-2 mt-4"></ul>
-
-            <!-- Step Form -->
-            <div id="stepForm" class="hidden flex gap-2 mt-2">
-              <input
-                id="stepInput"
-                type="text"
-                class="flex-1 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                placeholder="Add a small step..."
-              />
-              <button
-                type="button"
-                onclick="submitStep()"
-                class="px-3 py-2 rounded transition btn-yellow"
-              >
-                ➕ Add
-              </button>
-            </div>
-
-            <!-- Progress Bar -->
-            <div id="progressBarContainer" class="hidden mt-6">
-              <div class="relative pt-1">
-                <div
-                  class="overflow-hidden h-4 mb-4 text-xs flex rounded bg-pink-200 dark:bg-pink-900"
-                >
-                  <div
-                    id="progressBarFill"
-                    style="width: 0%"
-                    class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-pink-500 transition-all duration-500 ease-out"
-                  ></div>
-                </div>
-                <p
-                  id="progressText"
-                  class="text-sm font-medium text-gray-700 dark:text-gray-300 text-center"
-                ></p>
-              </div>
-            </div>
-
-            <!-- Pomodoro Timer -->
-
-            <div
-              id="pomodoroTimer"
-              class="hidden text-center mt-6 p-4 rounded-lg bg-blue-100 dark:bg-blue-900 shadow"
+          <div class="flex gap-2">
+            <button
+              onclick="showStepForm()"
+              class="px-4 py-2 rounded font-medium shadow btn-yellow"
             >
-              <h3
-                id="timerStatus"
-                class="text-lg font-semibold text-blue-800 dark:text-red-600 mb-2"
-              >
-                Focus Time!
-              </h3>
-              <div
-                class="text-5xl font-bold text-blue-700 dark:text-blue-100"
-                id="countdown"
-              >
-                25:00
-              </div>
-              <div class="flex justify-center gap-4 mt-4">
-                <button
-                  id="startTimerBtn"
-                  class="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
-                >
-                  Start
-                </button>
-                <button
-                  id="pauseTimerBtn"
-                  class="px-4 py-2 rounded bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700"
-                >
-                  Pause
-                </button>
-                <button
-                  id="resetTimerBtn"
-                  class="px-4 py-2 rounded bg-red-500 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
-                >
-                  Reset
-                </button>
-              </div>
-            </div>
+              Add Step
+            </button>
+            <button
+              id="markDoneBtn"
+              class="px-4 py-2 rounded font-medium shadow btn-pink"
+            >
+              Mark Done
+            </button>
+          </div>
 
-            <!-- Music Player (unchanged) -->
-            <div id="premiumFeatures" class="hidden">
-              <!-- 🎵 MUSIC PLAYER -->
-              <div id="musicSection">
+          <ul id="stepList" class="list-disc list-inside space-y-2 mt-4"></ul>
+
+          <div id="stepForm" class="hidden flex gap-2 mt-2">
+            <input
+              id="stepInput"
+              type="text"
+              class="flex-1 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              placeholder="Add a small step..."
+            />
+            <button
+              type="button"
+              onclick="submitStep()"
+              class="px-3 py-2 rounded transition btn-yellow"
+            >
+              ➕ Add
+            </button>
+          </div>
+
+          <div id="progressBarContainer" class="hidden mt-6">
+            <div class="relative pt-1">
+              <div
+                class="overflow-hidden h-4 mb-4 text-xs flex rounded bg-pink-200 dark:bg-pink-900"
+              >
                 <div
-                  id="musicPlayerContainer"
-                  class="mt-6 p-4 rounded-lg shadow-md music-player-panel"
-                >
-                  <h3 class="text-lg font-semibold mb-3 music-player-title">
-                    🎧 Let's listen to something good while at it, no? UwU
-                  </h3>
-                  <div class="flex flex-col sm:flex-row gap-2 mb-4">
-                    <input
-                      id="youtubeUrlInput"
-                      type="text"
-                      class="flex-1 px-3 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
-                      placeholder="Paste YouTube video link here..."
-                    />
-                    <button
-                      id="addTuneBtn"
-                      class="px-4 py-2 rounded-xl font-medium shadow btn-purple"
-                    >
-                      Add Song
-                    </button>
-                  </div>
-                  <div
-                    id="player"
-                    class="w-full aspect-video rounded-lg overflow-hidden mb-4 bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-gray-500 dark:text-gray-400"
+                  id="progressBarFill"
+                  style="width: 0%"
+                  class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-pink-500 transition-all duration-500 ease-out"
+                ></div>
+              </div>
+              <p
+                id="progressText"
+                class="text-sm font-medium text-gray-700 dark:text-gray-300 text-center"
+              ></p>
+            </div>
+          </div>
+
+          <div
+            id="pomodoroTimer"
+            class="hidden text-center mt-6 p-4 rounded-lg bg-blue-100 dark:bg-blue-900 shadow"
+          >
+            <h3
+              id="timerStatus"
+              class="text-lg font-semibold text-blue-800 dark:text-red-600 mb-2"
+            >
+              Focus Time!
+            </h3>
+            <div
+              class="text-5xl font-bold text-blue-700 dark:text-blue-100"
+              id="countdown"
+            >
+              25:00
+            </div>
+            <div class="flex justify-center gap-4 mt-4">
+              <button
+                id="startTimerBtn"
+                class="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+              >
+                Start
+              </button>
+              <button
+                id="pauseTimerBtn"
+                class="px-4 py-2 rounded bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700"
+              >
+                Pause
+              </button>
+              <button
+                id="resetTimerBtn"
+                class="px-4 py-2 rounded bg-red-500 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+
+          <div id="premiumFeatures" class="hidden">
+            <div id="musicSection">
+              <div
+                id="musicPlayerContainer"
+                class="mt-6 p-4 rounded-lg shadow-md music-player-panel"
+              >
+                <h3 class="text-lg font-semibold mb-3 music-player-title">
+                  🎧 Let's listen to something good while at it, no? UwU
+                </h3>
+                <div class="flex flex-col sm:flex-row gap-2 mb-4">
+                  <input
+                    id="youtubeUrlInput"
+                    type="text"
+                    class="flex-1 px-3 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    placeholder="Paste YouTube video link here..."
+                  />
+                  <button
+                    id="addTuneBtn"
+                    class="px-4 py-2 rounded-xl font-medium shadow btn-purple"
                   >
-                    <p id="playerPlaceholder" class="text-sm">
-                      Add your song to start listening!
+                    Add Song
+                  </button>
+                </div>
+                <div
+                  id="player"
+                  class="w-full aspect-video rounded-lg overflow-hidden mb-4 bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-gray-500 dark:text-gray-400"
+                >
+                  <p id="playerPlaceholder" class="text-sm">
+                    Add your song to start listening!
+                  </p>
+                </div>
+                <div class="flex justify-center gap-3">
+                  <button
+                    id="prevTuneBtn"
+                    class="px-4 py-2 rounded-full font-medium shadow btn-grey disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ⏮️ Previous
+                  </button>
+                  <button
+                    id="playPauseTuneBtn"
+                    class="px-6 py-2 rounded-full font-bold shadow btn-green"
+                  >
+                    ▶️ Play
+                  </button>
+                  <button
+                    id="nextTuneBtn"
+                    class="px-4 py-2 rounded-full font-medium shadow btn-grey disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next ⏭️
+                  </button>
+                </div>
+                <div class="mt-4">
+                  <h4 class="font-medium mb-2 music-playlist-header">
+                    My Playlist:
+                  </h4>
+                  <ul
+                    id="musicPlaylist"
+                    class="space-y-1 text-sm list-inside"
+                  >
+                    <p
+                      id="playlistPlaceholder"
+                      class="italic text-gray-600 dark:text-gray-400"
+                    >
+                      No tunes added yet.
                     </p>
-                  </div>
-                  <div class="flex justify-center gap-3">
-                    <button
-                      id="prevTuneBtn"
-                      class="px-4 py-2 rounded-full font-medium shadow btn-grey disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      ⏮️ Previous
-                    </button>
-                    <button
-                      id="playPauseTuneBtn"
-                      class="px-6 py-2 rounded-full font-bold shadow btn-green"
-                    >
-                      ▶️ Play
-                    </button>
-                    <button
-                      id="nextTuneBtn"
-                      class="px-4 py-2 rounded-full font-medium shadow btn-grey disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Next ⏭️
-                    </button>
-                  </div>
-                  <div class="mt-4">
-                    <h4 class="font-medium mb-2 music-playlist-header">
-                      My Playlist:
-                    </h4>
-                    <ul
-                      id="musicPlaylist"
-                      class="space-y-1 text-sm list-inside"
-                    >
-                      <p
-                        id="playlistPlaceholder"
-                        class="italic text-gray-600 dark:text-gray-400"
-                      >
-                        No tunes added yet.
-                      </p>
-                    </ul>
-                  </div>
+                  </ul>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- 🔒 Premium tease if not logged in -->
           <div
             id="premiumLocked"
             class="text-center text-sm text-pink-600 dark:text-pink-300 mt-6"
@@ -841,168 +739,161 @@
             <div id="completionSummaryList" class="text-sm"></div>
           </div>
         </div>
+      </div>
 
-        <div class="book-page right-panel shadow-lg rounded-xl p-6">
-          <h1 class="text-2xl font-bold mb-4">
-            🌟 MVP: Let's finish those tasks together!
-          </h1>
-          <div class="flex gap-2 mb-6">
-            <input
-              id="taskInput2"
-              type="text"
-              class="flex-1 px-4 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
-              placeholder="Gimme them tasks!"
-            />
-            <button
-              onclick="addTask()"
-              class="px-4 py-2 rounded-xl transition bg-pink-500 text-white hover:bg-pink-600 dark:bg-pink-600 dark:hover:bg-pink-700"
-            >
-              Add
-            </button>
-          </div>
-          <div
-            id="recurrenceOptions"
-            class="hidden mb-6 p-4 bg-gray-100 dark:bg-gray-700 rounded-xl shadow-inner"
-          >
-            <h5
-              class="font-semibold text-lg mb-3 text-gray-800 dark:text-gray-200"
-            >
-              Set Recurrence:
-            </h5>
-
-            <div class="mb-3">
-              <label
-                for="recurrenceType"
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >Repeats:</label
-              >
-              <select
-                id="recurrenceType"
-                class="w-full px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400 bg-white dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600"
-              >
-                <option value="none">Does not repeat</option>
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-                <option value="yearly">Yearly</option>
-                <option value="custom">Custom...</option>
-              </select>
-            </div>
-
-            <div id="recurrenceIntervalGroup" class="mb-3 hidden">
-              <label
-                for="recurrenceInterval"
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >Repeat every (days/weeks/months/years):</label
-              >
-              <input
-                type="number"
-                id="recurrenceInterval"
-                min="1"
-                value="1"
-                class="w-full px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400 bg-white dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600"
-              />
-            </div>
-
-            <div id="customRecurrenceDetails" class="mb-3 hidden">
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >Details:</label
-              >
-              <div
-                id="weeklyOptions"
-                class="grid grid-cols-3 sm:grid-cols-7 gap-2"
-              >
-                <button
-                  type="button"
-                  class="day-select-button px-2 py-1 rounded-md text-sm bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500"
-                  data-day="Sunday"
-                >
-                  Sun
-                </button>
-                <button
-                  type="button"
-                  class="day-select-button px-2 py-1 rounded-md text-sm bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500"
-                  data-day="Monday"
-                >
-                  Mon
-                </button>
-                <button
-                  type="button"
-                  class="day-select-button px-2 py-1 rounded-md text-sm bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500"
-                  data-day="Tuesday"
-                >
-                  Tue
-                </button>
-                <button
-                  type="button"
-                  class="day-select-button px-2 py-1 rounded-md text-sm bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500"
-                  data-day="Wednesday"
-                >
-                  Wed
-                </button>
-                <button
-                  type="button"
-                  class="day-select-button px-2 py-1 rounded-md text-sm bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500"
-                  data-day="Thursday"
-                >
-                  Thu
-                </button>
-                <button
-                  type="button"
-                  class="day-select-button px-2 py-1 rounded-md text-sm bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500"
-                  data-day="Friday"
-                >
-                  Fri
-                </button>
-                <button
-                  type="button"
-                  class="day-select-button px-2 py-1 rounded-md text-sm bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500"
-                  data-day="Saturday"
-                >
-                  Sat
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label
-                for="endRecurrenceDate"
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >Ends:</label
-              >
-              <input
-                type="date"
-                id="endRecurrenceDate"
-                class="w-full px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400 bg-white dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600"
-              />
-            </div>
-          </div>
-
-          <div class="flex justify-end mb-6">
-            <button
-              id="toggleRecurrenceOptions"
-              class="text-sm px-3 py-1 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500 transition"
-            >
-              + Recurrence
-            </button>
-          </div>
+      <div class="right-panel shadow-lg rounded-xl p-6">
+        <h1 class="text-2xl font-bold mb-4">
+          🌟 MVP: Let's finish those tasks together!
+        </h1>
+        <div class="flex gap-2 mb-6">
+          <input
+            id="taskInput2"
+            type="text"
+            class="flex-1 px-4 py-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+            placeholder="Gimme them tasks!"
+          />
           <button
-            onclick="editTask('${task.id}')"
-            class="ml-auto p-2 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            onclick="addTask()"
+            class="px-4 py-2 rounded-xl transition bg-pink-500 text-white hover:bg-pink-600 dark:bg-pink-600 dark:hover:bg-pink-700"
           >
-            <i class="fas fa-edit"></i>
+            Add
           </button>
+        </div>
+        <div
+          id="recurrenceOptions"
+          class="hidden mb-6 p-4 bg-gray-100 dark:bg-gray-700 rounded-xl shadow-inner"
+        >
+          <h5
+            class="font-semibold text-lg mb-3 text-gray-800 dark:text-gray-200"
+          >
+            Set Recurrence:
+          </h5>
 
-          <div id="taskPage" class="space-y-8 mt-8">
-            <div id="taskList" class="space-y-4">
-              <p class="italic">No task selected yet.</p>
+          <div class="mb-3">
+            <label
+              for="recurrenceType"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >Repeats:</label
+            >
+            <select
+              id="recurrenceType"
+              class="w-full px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400 bg-white dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600"
+            >
+              <option value="none">Does not repeat</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+              <option value="custom">Custom...</option>
+            </select>
+          </div>
+
+          <div id="recurrenceIntervalGroup" class="mb-3 hidden">
+            <label
+              for="recurrenceInterval"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >Repeat every (days/weeks/months/years):</label
+            >
+            <input
+              type="number"
+              id="recurrenceInterval"
+              min="1"
+              value="1"
+              class="w-full px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400 bg-white dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600"
+            />
+          </div>
+
+          <div id="customRecurrenceDetails" class="mb-3 hidden">
+            <label
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >Details:</label
+            >
+            <div
+              id="weeklyOptions"
+              class="grid grid-cols-3 sm:grid-cols-7 gap-2"
+            >
+              <button
+                type="button"
+                class="day-select-button px-2 py-1 rounded-md text-sm bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500"
+                data-day="Sunday"
+              >
+                Sun
+              </button>
+              <button
+                type="button"
+                class="day-select-button px-2 py-1 rounded-md text-sm bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500"
+                data-day="Monday"
+              >
+                Mon
+              </button>
+              <button
+                type="button"
+                class="day-select-button px-2 py-1 rounded-md text-sm bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500"
+                data-day="Tuesday"
+              >
+                Tue
+              </button>
+              <button
+                type="button"
+                class="day-select-button px-2 py-1 rounded-md text-sm bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500"
+                data-day="Wednesday"
+              >
+                Wed
+              </button>
+              <button
+                type="button"
+                class="day-select-button px-2 py-1 rounded-md text-sm bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500"
+                data-day="Thursday"
+              >
+                Thu
+              </button>
+              <button
+                type="button"
+                class="day-select-button px-2 py-1 rounded-md text-sm bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500"
+                data-day="Friday"
+              >
+                Fri
+              </button>
+              <button
+                type="button"
+                class="day-select-button px-2 py-1 rounded-md text-sm bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500"
+                data-day="Saturday"
+              >
+                Sat
+              </button>
             </div>
+          </div>
+
+          <div>
+            <label
+              for="endRecurrenceDate"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >Ends:</label
+            >
+            <input
+              type="date"
+              id="endRecurrenceDate"
+              class="w-full px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400 bg-white dark:bg-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600"
+            />
+          </div>
+        </div>
+
+        <div class="flex justify-end mb-6">
+          <button
+            id="toggleRecurrenceOptions"
+            class="text-sm px-3 py-1 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500 transition"
+          >
+            + Recurrence
+          </button>
+        </div>
+
+        <div id="taskPage" class="space-y-8 mt-8">
+          <div id="taskList" class="space-y-4">
+            <p class="italic">No task selected yet.</p>
           </div>
         </div>
       </div>
     </div>
-
     <script src="script.js"></script>
   </body>
-</html>
+  </html>
