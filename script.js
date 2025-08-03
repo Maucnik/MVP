@@ -68,7 +68,7 @@ function getYouTubeVideoId(url) {
     /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]{11})/,
     // Embed URL: https://www.youtube.com/embed/VIDEO_ID
     /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
-    // Mobile URL: https://m.youtube.com/watch?v=VIDEO_ID
+    // Mobile URL: https://m.youtube.com\/watch?v=VIDEO_ID
     /(?:https?:\/\/)?m\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/,
     // Short URL after share: https://youtube.com/shorts/VIDEO_ID
     /(?:https?:\/\/)?(?:www\.)?youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
@@ -86,8 +86,8 @@ function getYouTubeVideoId(url) {
 
 // --- DOM Elements ---
 const toggleDarkBtn = document.getElementById("toggleDark");
-const showMainTaskBtn = document.getElementById("showMainTaskBtn");
-const showAllTasksBtn = document.getElementById("showAllTasksBtn");
+
+
 const bookContainer = document.querySelector(".book-container");
 const taskInput = document.getElementById("taskInput"); // For main task
 const stepInput = document.getElementById("stepInput");
@@ -143,74 +143,18 @@ toggleDarkBtn.addEventListener("click", () => {
 markDoneBtn.addEventListener("click", markMainTaskAsDone);
 
 
-// --- Page Turning (UI only, no data logic here) ---
-function showPage(page) {
-  if (page === "mainTask") {
-    bookContainer.classList.remove("show-right");
-    bookContainer.classList.add("show-left");
-    showMainTaskBtn.classList.add(
-      "bg-pink-300",
-      "dark:bg-pink-700",
-      "text-pink-800",
-      "dark:text-pink-100"
-    );
-    showMainTaskBtn.classList.remove(
-      "bg-white",
-      "dark:bg-gray-700",
-      "text-gray-600",
-      "dark:text-gray-300"
-    );
-    showAllTasksBtn.classList.remove(
-      "bg-pink-300",
-      "dark:bg-pink-700",
-      "text-pink-800",
-      "dark:text-pink-100"
-    );
-    showAllTasksBtn.classList.add(
-      "bg-white",
-      "dark:bg-gray-700",
-      "text-gray-600",
-      "dark:text-gray-300"
-    );
-  } else if (page === "allTasks") {
-    bookContainer.classList.remove("show-left");
-    bookContainer.classList.add("show-right");
-    showAllTasksBtn.classList.add(
-      "bg-pink-300",
-      "dark:bg-pink-700",
-      "text-pink-800",
-      "dark:text-pink-100"
-    );
-    showAllTasksBtn.classList.remove(
-      "bg-white",
-      "dark:bg-gray-700",
-      "text-gray-600",
-      "dark:text-gray-300"
-    );
-    showMainTaskBtn.classList.remove(
-      "bg-pink-300",
-      "dark:bg-pink-700",
-      "text-pink-800",
-      "dark:text-pink-100"
-    );
-    showMainTaskBtn.classList.add(
-      "bg-white",
-      "dark:bg-gray-700",
-      "text-gray-600",
-      "dark:text-gray-300"
-    );
-  }
-}
 
-showMainTaskBtn.addEventListener("click", () => showPage("mainTask"));
-showAllTasksBtn.addEventListener("click", () => showPage("allTasks"));
 
 // --- Task Management Functions (Integrated with API) ---
 
 // Fetches all tasks from the backend
 async function fetchTasks() {
   try {
-    const response = await fetch(`${API_BASE_URL}/tasks`);
+    // Add userId to query parameters if available
+    const userId = sessionStorage.getItem("userId");
+    const url = userId ? `${API_BASE_URL}/tasks?userId=${userId}` : `${API_BASE_URL}/tasks`;
+
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -618,45 +562,44 @@ function populateRecurrenceFields(task) {
     }
 }
 
+
 // --- editTask function ---
 async function editTask(taskId) {
-    editingTaskId = taskId; // Set the global variable
+  editingTaskId = taskId; // Set the global variable
 
-    // Change "Add" button to "Save"
-    const addTaskButton = document.querySelector('button[onclick="addTask()"]');
+  // Add this line to ensure the 'All Tasks' page is shown
+  showPage('allTasks'); // <--- ADD THIS LINE
+
+  // Change "Add" button to "Save"
+  const addTaskButton = document.querySelector('button[onclick="addTask()"]');
+  if (addTaskButton) {
+    addTaskButton.textContent = 'Save';
+    addTaskButton.onclick = saveEditedTask; // Change the click handler
+  }
+  try {
+    const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const task = await response.json();
+    // Populate task title
+    const taskInput = document.getElementById("taskInput2");
+    if (taskInput) {
+      taskInput.value = task.title;
+    }
+    // Populate recurrence fields
+    populateRecurrenceFields(task);
+  } catch (error) {
+    console.error("Error fetching task for edit:", error);
+    alert("Failed to load task for editing. Check console for details.");
+    // Reset button if error occurs
     if (addTaskButton) {
-        addTaskButton.textContent = 'Save';
-        addTaskButton.onclick = saveEditedTask; // Change the click handler
+      addTaskButton.textContent = 'Add';
+      addTaskButton.onclick = addTask;
     }
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const task = await response.json();
-
-        // Populate task title
-        const taskInput = document.getElementById("taskInput2");
-        if (taskInput) {
-            taskInput.value = task.title;
-        }
-
-        // Populate recurrence fields
-        populateRecurrenceFields(task);
-
-    } catch (error) {
-        console.error("Error fetching task for edit:", error);
-        alert("Failed to load task for editing. Check console for details.");
-        // Reset button if error occurs
-        if (addTaskButton) {
-            addTaskButton.textContent = 'Add';
-            addTaskButton.onclick = addTask;
-        }
-        editingTaskId = null;
-    }
+    editingTaskId = null;
+  }
 }
-
 
 // --- New function to save edited task ---
 async function saveEditedTask() {
@@ -782,7 +725,6 @@ async function addTask() {
     completed: false,
     isMainTask: false,
     subtasks: [], // Assuming subtasks are not set during initial creation via this form
-
     // Recurrence fields
     recurrence_type: recurrenceType,
     recurrence_interval: recurrenceInterval,
@@ -791,6 +733,12 @@ async function addTask() {
     // For new tasks, original_task_id, main_task_id, parent_id, next_occurrence_date
     // will be handled by backend defaults or generation logic, so no need to send them from frontend for initial creation.
   };
+
+  // Conditionally add userId to taskData if available (for logged-in users)
+  const userId = sessionStorage.getItem("userId");
+  if (userId) {
+      taskData.userId = userId;
+  }
 
   try {
     const response = await fetch(`${API_BASE_URL}/tasks`, {
@@ -870,13 +818,12 @@ async function selectMainTask(taskId) {
     }
     await renderMainTask(); // Re-render main task on left panel
     await renderTasksOnRightPanel(); // Re-render all tasks on right panel
-    showPage("mainTask"); // Switch to main task view
+   
   } catch (error) {
     console.error("Error selecting main task:", error);
   }
 }
 
-// Delete a task
 async function deleteTask(taskId) {
   if (confirm("Are you sure you want to delete this task?")) {
     try {
@@ -887,16 +834,30 @@ async function deleteTask(taskId) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       console.log("Task deleted successfully");
+
+      // 🧠 Clear main task if it was deleted
       if (currentMainTask && currentMainTask.id === taskId) {
-        currentMainTask = null; // Clear main task if deleted
+        currentMainTask = null;
       }
-      await renderMainTask(); // Update main task view
-      await renderTasksOnRightPanel(); // Update all tasks view
+
+      // ⭐ Reset Add button if we're deleting the task we're editing
+      if (editingTaskId === taskId) {
+        const addTaskButton = document.querySelector('button[onclick="saveEditedTask()"]');
+        if (addTaskButton) {
+          addTaskButton.textContent = 'Add';
+          addTaskButton.onclick = addTask;
+        }
+        editingTaskId = null;
+      }
+
+      await renderMainTask();
+      await renderTasksOnRightPanel();
     } catch (error) {
       console.error("Error deleting task:", error);
     }
   }
 }
+
 
 // Toggle task completion (from right panel)
 async function toggleTaskComplete(taskId, completed) {
@@ -1401,7 +1362,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await renderMusicPlaylist(); // Fetch and render tunes on load
   await renderCompletionTrends(); // Render completion trends on load
 
-  showPage("mainTask"); // Default to showing the "Today's Task" page on load
+
 
   updateMainTaskProgressBar();
 });
@@ -1470,80 +1431,82 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-const loginBtn = document.getElementById("loginBtn");
-const registerBtn = document.getElementById("registerBtn");
-const authMessage = document.getElementById("authMessage");
+document.addEventListener("DOMContentLoaded", () => {
+  const loginBtn = document.getElementById("loginBtn");
+  const registerBtn = document.getElementById("registerBtn");
+  const authMessage = document.getElementById("authMessage");
 
-async function loginUser() {
-  const username = document.getElementById("usernameInput").value.trim();
-  const password = document.getElementById("passwordInput").value.trim();
-  if (!username || !password) return (authMessage.textContent = "Please fill out both fields.");
+  if (!loginBtn || !registerBtn || !authMessage) {
+    console.warn("Auth elements not found — skipping login/register setup.");
+    return;
+  }
 
-  try {
-    const res = await fetch(`${API_BASE_URL}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
-    const data = await res.json();
-
-    if (res.ok) {
-      authMessage.textContent = `🌟 Welcome, ${data.username}!`;
-      sessionStorage.setItem("username", data.username);
-      document.getElementById("authPanel").style.display = "none";
-      initApp(); // load tasks etc.
-    } else {
-      authMessage.textContent = data.message || "Login failed.";
+  async function loginUser() {
+    const username = document.getElementById("usernameInput").value.trim();
+    const password = document.getElementById("passwordInput").value.trim();
+    if (!username || !password) {
+      authMessage.textContent = "Please fill out both fields.";
+      return;
     }
-  } catch (err) {
-    authMessage.textContent = "Something went wrong.";
-    console.error(err);
-  }
-}
 
-async function registerUser() {
-  const username = document.getElementById("usernameInput").value.trim();
-  const password = document.getElementById("passwordInput").value.trim();
-  if (!username || !password) return (authMessage.textContent = "Please fill out both fields.");
+    try {
+      const res = await fetch(`${API_BASE_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
 
-  try {
-    const res = await fetch(`${API_BASE_URL}/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
-    const data = await res.json();
-
-    if (res.ok) {
-      authMessage.textContent = `🎉 Registered! Welcome, ${data.username}!`;
-      sessionStorage.setItem("username", data.username);
-      document.getElementById("authPanel").style.display = "none";
-      initApp();
-    } else {
-      authMessage.textContent = data.message || "Registration failed.";
+      if (res.ok) {
+        authMessage.textContent = `🌟 Welcome, ${data.username}!`;
+        sessionStorage.setItem("username", data.username);
+        if (data.userId) sessionStorage.setItem("userId", data.userId);
+        document.getElementById("authPanel").style.display = "none";
+        initApp();
+      } else {
+        authMessage.textContent = data.message || "Login failed.";
+      }
+    } catch (err) {
+      authMessage.textContent = "Something went wrong.";
+      console.error(err);
     }
-  } catch (err) {
-    authMessage.textContent = "Something went wrong.";
-    console.error(err);
   }
-}
 
+  async function registerUser() {
+    const username = document.getElementById("usernameInput").value.trim();
+    const password = document.getElementById("passwordInput").value.trim();
+    if (!username || !password) {
+      authMessage.textContent = "Please fill out both fields.";
+      return;
+    }
 
+    try {
+      const res = await fetch(`${API_BASE_URL}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
 
-loginBtn.addEventListener("click", loginUser);
-registerBtn.addEventListener("click", registerUser);
-
-function initApp() {
-  renderMainTask();
-  renderTasksOnRightPanel();
-
-  const username = sessionStorage.getItem("username");
-  if (username) {
-    showPremiumFeatures();
-  } else {
-    hidePremiumFeatures();
+      if (res.ok) {
+        authMessage.textContent = `🎉 Registered! Welcome, ${data.username}!`;
+        sessionStorage.setItem("username", data.username);
+        if (data.userId) sessionStorage.setItem("userId", data.userId);
+        document.getElementById("authPanel").style.display = "none";
+        initApp();
+      } else {
+        authMessage.textContent = data.message || "Registration failed.";
+      }
+    } catch (err) {
+      authMessage.textContent = "Something went wrong.";
+      console.error(err);
+    }
   }
-}
+
+  loginBtn.addEventListener("click", loginUser);
+  registerBtn.addEventListener("click", registerUser);
+});
+
 
 function showPremiumFeatures() {
   document.getElementById("premiumFeatures").classList.remove("hidden");
@@ -1594,5 +1557,14 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 
+function initApp() {
+  renderMainTask();
+  renderTasksOnRightPanel();
 
-
+  const username = sessionStorage.getItem("username");
+  if (username) {
+    showPremiumFeatures();
+  } else {
+    hidePremiumFeatures();
+  }
+}
